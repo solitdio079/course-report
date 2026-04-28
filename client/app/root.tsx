@@ -81,7 +81,7 @@ export default function App() {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-base-200">
+    <div className="min-h-screen flex flex-col bg-[#f4f7fb]">
       <Navbar />
       <div className="flex-1">
         <Outlet />

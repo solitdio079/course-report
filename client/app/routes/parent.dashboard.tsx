@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { API_URL, type AuthUser, fetchMe } from "../lib/auth";
+import { pdfUrl } from "../lib/reportLanguage";
 import { ButtonContent, PageLoader } from "../components/Spinner";
 
 type Child = {
@@ -43,7 +44,7 @@ type ReportItem = {
 };
 
 export default function ParentDashboard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,7 +126,7 @@ export default function ParentDashboard() {
   }
 
   async function downloadReport(id: number) {
-    const res = await fetch(`${API_URL}/reports/${id}/pdf`, {
+    const res = await fetch(pdfUrl(API_URL, id, i18n.language), {
       credentials: "include",
     });
     if (!res.ok) return alert("Could not download.");
@@ -310,37 +311,49 @@ export default function ParentDashboard() {
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          <h2 className="card-title">{t("parent.reports.title")}</h2>
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="card-title">{t("parent.reports.title")}</h2>
+              <p className="text-sm text-base-content/60">
+                Generated teacher reports are available here for download.
+              </p>
+            </div>
+            <span className="badge badge-ghost">{reports.length}</span>
+          </div>
           {reports.length === 0 ? (
-            <p className="text-base-content/70">{t("parent.reports.empty")}</p>
+            <p className="mt-4 rounded-lg bg-base-200 p-4 text-base-content/70">
+              {t("parent.reports.empty")}
+            </p>
           ) : (
-            <ul className="divide-y divide-base-300">
+            <ul className="mt-4 grid gap-3 md:grid-cols-2">
               {reports.map((r) => (
                 <li
                   key={r.id}
-                  className="py-3 flex items-center justify-between gap-2"
+                  className="rounded-lg border border-base-300 bg-[#fbfcfa] p-4"
                 >
-                  <div>
-                    <div className="font-medium">
+                  <div className="flex h-full flex-col justify-between gap-4">
+                    <div>
+                      <div className="font-medium">
                       {r.title}{" "}
-                      <span className="badge badge-ghost badge-sm">
-                        {r.report_type}
-                      </span>
+                        <span className="badge badge-ghost badge-sm">
+                          {r.report_type}
+                        </span>
+                      </div>
+                      <div className="mt-2 text-sm text-base-content/70">
+                        {r.first_name && r.last_name
+                          ? `${r.first_name} ${r.last_name} • `
+                          : ""}
+                        {r.author_name && `${r.author_name} • `}
+                        {new Date(r.created_at).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="text-sm text-base-content/70">
-                      {r.first_name && r.last_name
-                        ? `${r.first_name} ${r.last_name} • `
-                        : ""}
-                      {r.author_name && `${r.author_name} • `}
-                      {new Date(r.created_at).toLocaleString()}
-                    </div>
+                    <button
+                      className="btn btn-primary btn-sm self-start"
+                      onClick={() => downloadReport(r.id)}
+                    >
+                      {t("parent.reports.download")}
+                    </button>
                   </div>
-                  <button
-                    className="btn btn-ghost btn-xs"
-                    onClick={() => downloadReport(r.id)}
-                  >
-                    {t("parent.reports.download")}
-                  </button>
                 </li>
               ))}
             </ul>

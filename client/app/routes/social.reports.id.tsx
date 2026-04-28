@@ -1,6 +1,8 @@
 import { Link, useNavigate, useParams } from "react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { API_URL, fetchMe } from "../lib/auth";
+import { pdfUrl } from "../lib/reportLanguage";
 import { ButtonContent, PageLoader } from "../components/Spinner";
 
 type Report = {
@@ -19,6 +21,7 @@ type Report = {
 export default function SocialReportView() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<Report | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -55,7 +58,7 @@ export default function SocialReportView() {
     if (!report) return;
     setDownloading(true);
     try {
-      const res = await fetch(`${API_URL}/reports/${report.id}/pdf`, {
+      const res = await fetch(pdfUrl(API_URL, report.id, i18n.language), {
         credentials: "include",
       });
       if (!res.ok) {

@@ -1,3 +1,4 @@
+const fs = require("fs")
 const PDFDocument = require("pdfkit")
 
 /**
@@ -13,61 +14,83 @@ const PDFDocument = require("pdfkit")
  *   points: string|number|null,
  *   teacher_comment: string|null,
  *   progress_appreciation: string|null,
+ *   criteria?: Record<string, string>|null,
  * }>} params.evaluations
  * @param {NodeJS.WritableStream} params.stream
  */
-function buildReportPdf({ report, evaluations, stream }) {
+function buildReportPdf({ report, evaluations, stream, language = "en" }) {
   const doc = new PDFDocument({ size: "A4", margin: 50 })
   doc.pipe(stream)
+  useUnicodeFont(doc)
 
   const isSocial = report.report_type === "social"
+  const lang = normalizeLanguage(language)
+  const labels = PDF_LABELS[lang]
+  const { left, right } = pageBounds(doc)
+  const contentWidth = right - left
+  const header = reportHeaderParts(report, isSocial, labels, lang)
 
   // Header
+  doc.rect(0, 0, doc.page.width, 148).fill("#ecfdf5")
   doc
-    .fontSize(20)
-    .fillColor("#111827")
-    .text(report.title || (isSocial ? "Social report" : "Course report"), {
+    .roundedRect(left, 34, 58, 58, 14)
+    .fill("#0f766e")
+    .fillColor("#ffffff")
+    .fontSize(18)
+    .text("CR", left, 52, { width: 58, align: "center" })
+
+  doc
+    .fontSize(22)
+    .fillColor("#0f172a")
+    .text(header.title, left + 74, 35, {
+      width: contentWidth - 74,
       align: "left",
     })
+  doc
+    .fontSize(15)
+    .fillColor("#0f766e")
+    .text(header.subtitle, left + 74, 64, { width: contentWidth - 74 })
 
-  doc.moveDown(0.3)
   const authorLine = report.author_name
-    ? `   •   Author: ${report.author_name}` +
+    ? `   •   ${labels.author}: ${report.author_name}` +
       (report.author_role ? ` (${report.author_role})` : "")
     : ""
   doc
     .fontSize(10)
-    .fillColor("#6b7280")
+    .fillColor("#475569")
     .text(
-      `Student: ${report.first_name} ${report.last_name}` +
+      `${labels.student}: ${report.first_name} ${report.last_name}` +
         authorLine +
-        `   •   Generated: ${new Date(report.created_at).toLocaleString()}`
+        `   •   ${labels.generated}: ${formatDateTime(report.created_at, lang)}`,
+      left + 74,
+      92,
+      { width: contentWidth - 74 }
     )
 
-  doc.moveDown(1)
-  drawDivider(doc)
+  doc.y = 172
+  doc.x = left
 
   // Free-form content (used by social reports)
   if (report.content) {
-    doc.moveDown(0.6)
-    doc.fontSize(14).fillColor("#111827").text("Report")
-    doc.moveDown(0.3)
+    drawSectionTitle(doc, labels.report, labels.teacherNotes)
     doc
       .fontSize(11)
       .fillColor("#111827")
-      .text(report.content, { align: "left" })
-    doc.moveDown(0.6)
-    drawDivider(doc)
+      .text(report.content, left, doc.y, { width: contentWidth, align: "left" })
+    doc.y += 20
   }
 
   // Performance chart (course reports only)
+  const reportEvaluations = monthlyEvaluations(evaluations, report)
+
+  if (!isSocial) {
+    drawSectionTitle(doc, labels.monthlyOverview, labels.monthlyOverviewSub)
+    drawMonthlySummary(doc, reportEvaluations, labels)
+  }
+
   if (!isSocial && report.includes_charts) {
-    doc.moveDown(0.6)
-    doc.fontSize(14).fillColor("#111827").text("Performance")
-    doc.moveDown(0.3)
-    drawPointsChart(doc, evaluations)
-    doc.moveDown(0.6)
-    drawDivider(doc)
+    drawSectionTitle(doc, labels.ratingChart, labels.ratingChartSub)
+    drawPointsChart(doc, reportEvaluations, labels, lang)
   }
 
   if (isSocial) {
@@ -76,42 +99,239 @@ function buildReportPdf({ report, evaluations, stream }) {
   }
 
   // Evaluations
-  doc.moveDown(0.6)
-  doc.fontSize(14).fillColor("#111827").text("Evaluations")
-  doc.moveDown(0.3)
+  if (reportEvaluations && reportEvaluations.length > 0) ensureSpace(doc, 250)
+  drawSectionTitle(doc, labels.evaluationTimeline, labels.evaluationTimelineSub)
 
-  if (!evaluations || evaluations.length === 0) {
-    doc.fontSize(10).fillColor("#6b7280").text("No evaluations.")
-  } else {
-    evaluations.forEach((e, i) => {
-      if (i > 0) doc.moveDown(0.6)
-
-      const meta = [
-        new Date(e.created_at).toLocaleString(),
-        e.course_name || null,
-        e.teacher_name ? `by ${e.teacher_name}` : null,
-        e.points != null ? `${e.points} pts` : null,
-      ]
-        .filter(Boolean)
-        .join("  •  ")
-
-      doc.fontSize(10).fillColor("#6b7280").text(meta)
-
-      if (e.teacher_comment) {
-        doc.moveDown(0.2)
-        doc.fontSize(11).fillColor("#111827").text(e.teacher_comment)
-      }
-      if (e.progress_appreciation) {
-        doc.moveDown(0.2)
-        doc
-          .fontSize(10)
-          .fillColor("#374151")
-          .text(`Progress: ${e.progress_appreciation}`, { oblique: true })
-      }
+  if (!reportEvaluations || reportEvaluations.length === 0) {
+    doc.fontSize(10).fillColor("#6b7280").text(labels.noEvaluations, left, doc.y, {
+      width: contentWidth,
     })
+  } else {
+    reportEvaluations.forEach((e) => drawEvaluationCard(doc, e, labels, lang))
   }
 
   doc.end()
+}
+
+const PDF_LABELS = {
+  en: {
+    author: "Author",
+    generated: "Generated",
+    student: "Student",
+    monthlyCourseReport: "Monthly course report",
+    socialReport: "Social report",
+    report: "Report",
+    teacherNotes: "Teacher notes and context",
+    monthlyOverview: "Monthly overview",
+    monthlyOverviewSub: "A warm summary of this student's month",
+    ratingChart: "Rating chart",
+    ratingChartSub: "Progress rating from each evaluation",
+    evaluationTimeline: "Evaluation timeline",
+    evaluationTimelineSub: "Dated teacher observations",
+    averageRating: (rating, count) =>
+      `Average rating: ${rating}/5 across ${count} evaluation(s).`,
+    noRatings: "No ratings recorded.",
+    commentOverview: "Comment overview",
+    noTeacherComments: "No teacher comments recorded.",
+    noNumericPoints: "No numeric points to chart.",
+    noEvaluations: "No evaluations.",
+    noCourseComment: "No course comment recorded.",
+    teacherComment: "Teacher comment",
+    progressNote: "Progress note",
+    by: "by",
+    criteria: {
+      vocabulary: "Vocabulary",
+      grammar: "Grammar",
+      listening_comprehension: "Listening comprehension",
+      reading_comprehension: "Reading comprehension",
+      speaking: "Speaking",
+      writing: "Writing",
+      pronunciation: "Pronunciation",
+      confidence: "Confidence",
+      autonomy: "Autonomy",
+    },
+    statuses: {
+      in_progress: "In progress",
+      needs_work: "Needs work",
+      priority: "Priority to strengthen",
+    },
+  },
+  tr: {
+    author: "Hazırlayan",
+    generated: "Oluşturulma",
+    student: "Öğrenci",
+    monthlyCourseReport: "Aylık ders raporu",
+    socialReport: "Sosyal rapor",
+    report: "Rapor",
+    teacherNotes: "Öğretmen notları ve bağlam",
+    monthlyOverview: "Aylık özet",
+    monthlyOverviewSub: "Öğrencinin bu ayki gelişimine sıcak bir bakış",
+    ratingChart: "Puan grafiği",
+    ratingChartSub: "Her değerlendirmedeki gelişim puanı",
+    evaluationTimeline: "Değerlendirme zaman çizelgesi",
+    evaluationTimelineSub: "Tarihli öğretmen gözlemleri",
+    averageRating: (rating, count) =>
+      `${count} değerlendirme üzerinden ortalama puan: ${rating}/5.`,
+    noRatings: "Puan kaydedilmedi.",
+    commentOverview: "Yorum özeti",
+    noTeacherComments: "Öğretmen yorumu kaydedilmedi.",
+    noNumericPoints: "Grafik için sayısal puan yok.",
+    noEvaluations: "Değerlendirme yok.",
+    noCourseComment: "Ders yorumu kaydedilmedi.",
+    teacherComment: "Öğretmen yorumu",
+    progressNote: "Gelişim notu",
+    by: "hazırlayan",
+    criteria: {
+      vocabulary: "Kelime bilgisi",
+      grammar: "Dil bilgisi",
+      listening_comprehension: "Dinleme anlama",
+      reading_comprehension: "Okuma anlama",
+      speaking: "Konuşma",
+      writing: "Yazma",
+      pronunciation: "Telaffuz",
+      confidence: "Özgüven",
+      autonomy: "Özerklik",
+    },
+    statuses: {
+      in_progress: "Gelişiyor",
+      needs_work: "Çalışılmalı",
+      priority: "Öncelikli güçlendirilmeli",
+    },
+  },
+}
+
+function normalizeLanguage(language) {
+  return String(language || "").toLowerCase().startsWith("tr") ? "tr" : "en"
+}
+
+function useUnicodeFont(doc) {
+  const candidates = [
+    "/Library/Fonts/Arial Unicode.ttf",
+    "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+    "/System/Library/Fonts/Supplemental/Arial.ttf",
+  ]
+  const fontPath = candidates.find((candidate) => fs.existsSync(candidate))
+  if (fontPath) doc.font(fontPath)
+}
+
+function reportHeaderParts(report, isSocial, labels, language) {
+  if (!isSocial) {
+    return {
+      title: labels.monthlyCourseReport,
+      subtitle: `${report.first_name} ${report.last_name} · ${formatMonthYear(
+        report.created_at,
+        language
+      )}`,
+    }
+  }
+
+  return {
+    title: report.title || labels.socialReport,
+    subtitle: `${report.first_name} ${report.last_name}`,
+  }
+}
+
+function formatCriteria(criteria, labels) {
+  if (!criteria || typeof criteria !== "object" || Array.isArray(criteria)) {
+    return []
+  }
+
+  return Object.entries(labels.criteria)
+    .map(([key, label]) => {
+      const status = labels.statuses[criteria[key]]
+      return status ? `${label}: ${status}` : null
+    })
+    .filter(Boolean)
+}
+
+function monthlyEvaluations(evaluations, report) {
+  const source = evaluations || []
+  const inMonth = source.filter((evaluation) =>
+    sameMonth(evaluation.created_at, report.created_at)
+  )
+  return inMonth.length > 0 ? inMonth : source
+}
+
+function sameMonth(date, monthSource) {
+  const left = new Date(date)
+  const right = new Date(monthSource)
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth()
+  )
+}
+
+function numericRatings(evaluations) {
+  return (evaluations || [])
+    .filter((e) => e.points != null)
+    .map((e) => Number(e.points))
+    .filter((value) => Number.isFinite(value))
+    .map((value) => Math.max(1, Math.min(5, Math.round(value))))
+}
+
+function drawMonthlySummary(doc, evaluations, labels) {
+  const { left, right } = pageBounds(doc)
+  const width = right - left
+  const ratings = numericRatings(evaluations)
+  const comments = (evaluations || [])
+    .flatMap((evaluation) => [
+      evaluation.teacher_comment,
+      evaluation.progress_appreciation,
+    ])
+    .filter((comment) => typeof comment === "string" && comment.trim())
+    .slice(0, 3)
+  const summaryTop = doc.y
+  const summaryHeight = Math.max(122, 82 + comments.length * 17)
+
+  doc.roundedRect(left, summaryTop, width, summaryHeight, 10).fill("#f8fafc")
+  doc.x = left + 18
+  doc.y = summaryTop + 15
+
+  if (ratings.length > 0) {
+    const average =
+      ratings.reduce((total, rating) => total + rating, 0) / ratings.length
+    drawRatingPill(doc, left + 18, summaryTop + 14, average.toFixed(1))
+    doc
+      .fontSize(11)
+      .fillColor("#334155")
+      .text(
+        labels.averageRating(average.toFixed(1), ratings.length),
+        left + 120,
+        summaryTop + 20,
+        { width: width - 140 }
+      )
+  } else {
+    doc.fontSize(10).fillColor("#6b7280").text(labels.noRatings, left + 18, doc.y, {
+      width: width - 36,
+    })
+  }
+
+  doc.fontSize(10).fillColor("#0f172a").text(labels.commentOverview, left + 18, summaryTop + 58, {
+    width: width - 36,
+  })
+  if (comments.length === 0) {
+    doc.fontSize(10).fillColor("#6b7280").text(labels.noTeacherComments, left + 18, doc.y + 4, {
+      width: width - 36,
+    })
+    doc.y = summaryTop + summaryHeight + 20
+    doc.x = left
+    return
+  }
+
+  doc.y += 4
+  comments.forEach((comment) => {
+    doc.fontSize(9.5).fillColor("#475569").text(`- ${comment}`, left + 18, doc.y, {
+      width: width - 36,
+    })
+  })
+  doc.y = Math.max(doc.y + 20, summaryTop + summaryHeight + 20)
+  doc.x = left
+}
+
+function formatRating(points) {
+  const value = Number(points)
+  if (!Number.isFinite(value)) return points
+  return Math.max(1, Math.min(5, Math.round(value)))
 }
 
 function drawDivider(doc) {
@@ -126,34 +346,141 @@ function drawDivider(doc) {
   doc.moveDown(0.2)
 }
 
-function drawPointsChart(doc, evaluations) {
+function drawSectionTitle(doc, title, subtitle) {
+  ensureSpace(doc, 88)
+  const { left, right } = pageBounds(doc)
+  doc.x = left
+  doc.moveDown(0.2)
+  doc
+    .fontSize(16)
+    .fillColor("#0f172a")
+    .text(title, left, doc.y, { width: right - left })
+  if (subtitle) {
+    doc
+      .fontSize(9)
+      .fillColor("#64748b")
+      .text(subtitle, left, doc.y + 3, { width: right - left })
+  }
+  doc.y += 14
+  doc.x = left
+}
+
+function drawRatingPill(doc, x, y, rating) {
+  doc.roundedRect(x, y, 84, 34, 17).fill("#dcfce7")
+  doc
+    .fontSize(14)
+    .fillColor("#166534")
+    .text(`${rating}/5`, x, y + 9, { width: 84, align: "center" })
+}
+
+function drawEvaluationCard(doc, evaluation, labels, language) {
+  const { left, right } = pageBounds(doc)
+  const width = right - left
+  const criteriaLines = formatCriteria(evaluation.criteria, labels)
+  const comment = evaluation.teacher_comment || labels.noCourseComment
+  const progress = evaluation.progress_appreciation
+  const cardHeight = Math.max(
+    120,
+    92 + Math.ceil(criteriaLines.join("   ").length / 90) * 15
+  )
+
+  ensureSpace(doc, cardHeight + 18)
+  const top = doc.y
+
+  doc.roundedRect(left, top, width, cardHeight, 10).fill("#ffffff")
+  doc.roundedRect(left, top, width, cardHeight, 10).strokeColor("#dbeafe").stroke()
+
+  const meta = [
+    formatDateTime(evaluation.created_at, language),
+    evaluation.course_name || null,
+    evaluation.teacher_name ? `${labels.by} ${evaluation.teacher_name}` : null,
+  ]
+    .filter(Boolean)
+    .join("  •  ")
+
+  doc
+    .fontSize(9)
+    .fillColor("#64748b")
+    .text(meta, left + 18, top + 16, { width: width - 128 })
+
+  if (evaluation.points != null) {
+    drawRatingPill(doc, right - 100, top + 12, formatRating(evaluation.points))
+  }
+
+  doc
+    .fontSize(12)
+    .fillColor("#0f172a")
+    .text(labels.teacherComment, left + 18, top + 40, { width: width - 36 })
+  doc
+    .fontSize(10)
+    .fillColor("#334155")
+    .text(comment, left + 18, top + 58, { width: width - 36 })
+
+  let y = doc.y + 8
+  if (progress) {
+    doc
+      .fontSize(10)
+      .fillColor("#0f766e")
+      .text(`${labels.progressNote}: ${progress}`, left + 18, y, { width: width - 36 })
+    y = doc.y + 8
+  }
+
+  if (criteriaLines.length > 0) {
+    doc
+      .fontSize(8.5)
+      .fillColor("#475569")
+      .text(criteriaLines.join("   |   "), left + 18, y, { width: width - 36 })
+  }
+
+  doc.y = top + cardHeight + 14
+  doc.x = left
+}
+
+function ensureSpace(doc, neededHeight) {
+  const bottom = doc.page.height - doc.page.margins.bottom
+  if (doc.y + neededHeight > bottom) {
+    doc.addPage()
+    doc.x = doc.page.margins.left
+    doc.y = doc.page.margins.top
+  }
+}
+
+function drawPointsChart(doc, evaluations, labels, language) {
   const numeric = (evaluations || [])
     .filter((e) => e.points != null)
     .map((e) => ({
       date: new Date(e.created_at),
-      value: Number(e.points),
+      value: formatRating(e.points),
       course: e.course_name || "—",
     }))
     .sort((a, b) => a.date.getTime() - b.date.getTime())
 
   if (numeric.length === 0) {
-    doc.fontSize(10).fillColor("#6b7280").text("No numeric points to chart.")
+    const { left, right } = pageBounds(doc)
+    doc.fontSize(10).fillColor("#6b7280").text(labels.noNumericPoints, left, doc.y, {
+      width: right - left,
+    })
     return
   }
 
   const { left, right } = pageBounds(doc)
-  const chartLeft = left + 40
-  const chartRight = right - 20
-  const chartTop = doc.y + 10
+  ensureSpace(doc, 275)
+  const chartBoxTop = doc.y
+  const chartBoxHeight = 250
+  doc.roundedRect(left, chartBoxTop, right - left, chartBoxHeight, 10).fill("#f8fafc")
+
+  const chartLeft = left + 58
+  const chartRight = right - 26
+  const chartTop = chartBoxTop + 28
   const chartHeight = 180
   const chartBottom = chartTop + chartHeight
   const chartWidth = chartRight - chartLeft
 
-  const yMax = 100
-  const yMin = 0
+  const yMax = 5
+  const yMin = 1
 
-  // Y axis grid + labels (0, 25, 50, 75, 100)
-  const ticks = [0, 25, 50, 75, 100]
+  // Y axis grid + labels (1 to 5 stars)
+  const ticks = [1, 2, 3, 4, 5]
   ticks.forEach((t) => {
     const y = chartBottom - ((t - yMin) / (yMax - yMin)) * chartHeight
     doc
@@ -165,7 +492,7 @@ function drawPointsChart(doc, evaluations) {
     doc
       .fillColor("#6b7280")
       .fontSize(8)
-      .text(String(t), chartLeft - 28, y - 4, { width: 24, align: "right", lineBreak: false })
+      .text(String(t), chartLeft - 28, y - 4, { width: 24, align: "right" })
   })
 
   // Axes
@@ -207,7 +534,7 @@ function drawPointsChart(doc, evaluations) {
     doc
       .fillColor("#111827")
       .fontSize(8)
-      .text(String(n.value), x - 12, y - 14, { width: 24, align: "center", lineBreak: false })
+      .text(String(n.value), x - 12, y - 14, { width: 24, align: "center" })
   })
 
   // X axis date labels (first, middle, last)
@@ -219,14 +546,30 @@ function drawPointsChart(doc, evaluations) {
   xLabels.forEach((idx) => {
     const n = numeric[idx]
     const x = xFor(idx, n.date.getTime())
-    const label = n.date.toLocaleDateString()
+    const label = n.date.toLocaleDateString(localeForLanguage(language))
     doc
       .fillColor("#6b7280")
       .fontSize(8)
-      .text(label, x - 30, chartBottom + 4, { width: 60, align: "center", lineBreak: false })
+      .text(label, x - 30, chartBottom + 8, { width: 60, align: "center" })
   })
 
-  doc.y = chartBottom + 22
+  doc.x = left
+  doc.y = chartBoxTop + chartBoxHeight + 28
+}
+
+function localeForLanguage(language) {
+  return language === "tr" ? "tr-TR" : "en-US"
+}
+
+function formatDateTime(value, language) {
+  return new Date(value).toLocaleString(localeForLanguage(language))
+}
+
+function formatMonthYear(value, language) {
+  return new Date(value).toLocaleString(localeForLanguage(language), {
+    month: "long",
+    year: "numeric",
+  })
 }
 
 function pageBounds(doc) {

@@ -7,6 +7,12 @@ const router = express.Router()
 
 router.use(requireAuth)
 
+function pdfLanguage(req) {
+  return String(req.query.lang || "").toLowerCase().startsWith("tr")
+    ? "tr"
+    : "en"
+}
+
 router.get("/:id", async (req, res, next) => {
   try {
     const id = Number(req.params.id)
@@ -50,7 +56,7 @@ router.get("/:id/pdf", async (req, res, next) => {
       `attachment; filename="${safeName}"`
     )
 
-    buildReportPdf({ report, evaluations, stream: res })
+    buildReportPdf({ report, evaluations, stream: res, language: pdfLanguage(req) })
   } catch (err) {
     next(err)
   }

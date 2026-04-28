@@ -4,7 +4,6 @@ import type { Route } from "./+types/home";
 import i18n from "../i18n";
 
 export function meta({}: Route.MetaArgs) {
-  // SSR uses default lang; client may swap on hydration via useTranslation
   return [
     { title: i18n.t("meta.home.title") },
     { name: "description", content: i18n.t("meta.home.description") },
@@ -19,80 +18,63 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
+const featureTiles = [
+  { key: "students", icon: "St", color: "#246bfe" },
+  { key: "evaluations", icon: "Ev", color: "#6d5dfc" },
+  { key: "inbox", icon: "In", color: "#0f9f8f" },
+  { key: "payments", icon: "Py", color: "#c46a00" },
+  { key: "roles", icon: "Rl", color: "#d94330" },
+  { key: "pdf", icon: "Pdf", color: "#102033" },
+] as const;
+
 export default function Home() {
   const { t } = useTranslation();
   return (
-    <main className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-base-200 via-base-100 to-base-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-2 items-center">
-          <div className="text-center md:text-left">
-            <span className="badge badge-primary badge-outline mb-4">
+    <main className="min-h-screen bg-[#f5f5f3]">
+      <section
+        className="relative min-h-[680px] overflow-hidden bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(244,247,251,0.96), rgba(244,247,251,0.84), rgba(244,247,251,0.42)), url(https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1800&q=82)",
+        }}
+      >
+        <div className="mx-auto flex min-h-[680px] max-w-7xl items-center px-4 py-20">
+          <div className="max-w-2xl text-[#102033]">
+            <div className="mb-5 inline-flex rounded-lg bg-[#dff5f1] px-3 py-2 text-xs font-bold uppercase tracking-wide text-[#075f56]">
               {t("home.heroBadge")}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+            </div>
+            <h1 className="max-w-2xl text-5xl font-black leading-tight tracking-tight md:text-7xl">
               {t("home.heroTitle.before")}
-              <span className="text-primary">
-                {t("home.heroTitle.highlight")}
-              </span>
+              <span className="text-[#075f56]">{t("home.heroTitle.highlight")}</span>
             </h1>
-            <p className="mt-6 text-lg md:text-xl text-base-content/70 max-w-xl mx-auto md:mx-0">
+            <p className="mt-6 max-w-xl text-lg leading-8 text-[#24384f] md:text-xl">
               {t("home.heroSubtitle")}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <Link className="btn btn-primary btn-lg" to="/sign-up">
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link className="btn btn-primary btn-lg rounded-lg" to="/sign-up">
                 {t("home.cta.signUp")}
               </Link>
-              <Link className="btn btn-outline btn-lg" to="/sign-in">
+              <Link
+                className="btn btn-outline btn-lg rounded-lg bg-white"
+                to="/sign-in"
+              >
                 {t("home.cta.signIn")}
               </Link>
             </div>
-            <p className="mt-3 text-sm text-base-content/60">
+            <p className="mt-4 text-sm font-medium text-[#24384f]">
               {t("home.cta.teacher.before")}
-              <Link className="link" to="/teacher/sign-in">
+              <Link className="font-semibold underline" to="/teacher/sign-in">
                 {t("home.cta.teacher.link")}
               </Link>
               .
             </p>
           </div>
-
-          <div className="relative">
-            <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full bg-primary/20 blur-2xl" />
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 rounded-full bg-secondary/20 blur-2xl" />
-            <div className="grid grid-cols-5 grid-rows-5 gap-3 relative">
-              <img
-                src="https://images.unsplash.com/photo-1588072432836-e10032774350?auto=format&fit=crop&w=900&q=80"
-                alt="Children reading together"
-                className="col-span-3 row-span-3 rounded-2xl shadow-xl object-cover w-full h-full"
-                loading="eager"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1544717297-fa95b6ee9643?auto=format&fit=crop&w=600&q=80"
-                alt="Teacher reviewing notes"
-                className="col-span-2 row-span-2 rounded-2xl shadow-xl object-cover w-full h-full"
-                loading="lazy"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80"
-                alt="Notebook and learning materials"
-                className="col-span-2 row-span-3 rounded-2xl shadow-xl object-cover w-full h-full"
-                loading="lazy"
-              />
-              <img
-                src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=600&q=80"
-                alt="Books on a desk"
-                className="col-span-3 row-span-2 rounded-2xl shadow-xl object-cover w-full h-full"
-                loading="lazy"
-              />
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Stats strip */}
-      <section className="bg-base-100 border-y border-base-300">
-        <div className="mx-auto max-w-6xl px-4 py-10 grid gap-6 grid-cols-2 md:grid-cols-4 text-center">
+      <section className="border-y border-[#cfe2ff] bg-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-[#cfe2ff] px-4 md:grid-cols-4">
           <Stat value="5+" label={t("home.stat.roles")} />
           <Stat value="∞" label={t("home.stat.students")} />
           <Stat value="PDF" label={t("home.stat.pdf")} />
@@ -100,90 +82,75 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-semibold">{t("home.features.title")}</h2>
-          <p className="mt-2 text-base-content/70">
-            {t("home.features.subtitle")}
+      <section className="mx-auto max-w-7xl px-4 py-16 md:py-20">
+        <div className="max-w-3xl">
+          <p className="text-sm font-bold uppercase tracking-wide text-[#1473e6]">
+            {t("home.features.title")}
           </p>
+          <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
+            {t("home.features.subtitle")}
+          </h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          <Feature
-            title={t("home.feature.students.title")}
-            text={t("home.feature.students.text")}
-          />
-          <Feature
-            title={t("home.feature.evaluations.title")}
-            text={t("home.feature.evaluations.text")}
-          />
-          <Feature
-            title={t("home.feature.inbox.title")}
-            text={t("home.feature.inbox.text")}
-          />
-          <Feature
-            title={t("home.feature.payments.title")}
-            text={t("home.feature.payments.text")}
-          />
-          <Feature
-            title={t("home.feature.roles.title")}
-            text={t("home.feature.roles.text")}
-          />
-          <Feature
-            title={t("home.feature.pdf.title")}
-            text={t("home.feature.pdf.text")}
-          />
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          {featureTiles.map((tile) => (
+            <FeatureTile
+              key={tile.key}
+              icon={tile.icon}
+              color={tile.color}
+              title={t(`home.feature.${tile.key}.title`)}
+              text={t(`home.feature.${tile.key}.text`)}
+            />
+          ))}
         </div>
       </section>
 
-      {/* Showcase */}
-      <section className="bg-base-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 grid gap-10 md:grid-cols-2 items-center">
-          <img
-            src="https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1200&q=80"
-            alt="Parent and child reviewing a school report"
-            className="rounded-2xl shadow-xl object-cover w-full h-full max-h-[420px]"
-            loading="lazy"
-          />
+      <section className="bg-[#e7f5f2] text-[#102033]">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.1fr_0.9fr] md:py-20">
           <div>
-            <h2 className="text-3xl font-semibold">
+            <h2 className="text-4xl font-black tracking-tight">
               {t("home.showcase.title")}
             </h2>
-            <p className="mt-4 text-base-content/70">{t("home.showcase.text")}</p>
-            <ul className="mt-6 space-y-3 text-base-content/80">
-              <li className="flex items-start gap-2">
-                <span className="badge badge-primary badge-sm mt-1">1</span>
-                <span>{t("home.showcase.step1")}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="badge badge-primary badge-sm mt-1">2</span>
-                <span>{t("home.showcase.step2")}</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="badge badge-primary badge-sm mt-1">3</span>
-                <span>{t("home.showcase.step3")}</span>
-              </li>
-            </ul>
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-[#24384f]">
+              {t("home.showcase.text")}
+            </p>
+            <div className="mt-8 grid gap-3">
+              <WorkflowStep number="1" text={t("home.showcase.step1")} />
+              <WorkflowStep number="2" text={t("home.showcase.step2")} />
+              <WorkflowStep number="3" text={t("home.showcase.step3")} />
+            </div>
+          </div>
+          <div className="creative-tile bg-white p-4 text-[#102033]">
+            <img
+              src="https://images.unsplash.com/photo-1497486751825-1233686d5d80?auto=format&fit=crop&w=1200&q=82"
+              alt="Parent and child reviewing a school report"
+              className="h-72 w-full rounded-lg object-cover"
+              loading="lazy"
+            />
+            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+              <MiniMetric value="PDF" label={t("home.stat.pdf")} />
+              <MiniMetric value="5" label={t("home.stat.roles")} />
+              <MiniMetric value="TR" label={t("language")} />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-primary text-primary-content">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-          <h2 className="text-3xl font-semibold">
-            {t("home.bottomCta.title")}
-          </h2>
-          <p className="mt-3 opacity-90">{t("home.bottomCta.subtitle")}</p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link className="btn btn-secondary btn-lg" to="/sign-up">
+      <section className="bg-[#ffdc5c]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-14 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-4xl font-black tracking-tight">
+              {t("home.bottomCta.title")}
+            </h2>
+            <p className="mt-2 max-w-2xl font-medium text-[#24384f]">
+              {t("home.bottomCta.subtitle")}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link className="btn btn-primary btn-lg rounded-lg" to="/sign-up">
               {t("home.bottomCta.signUp")}
             </Link>
-            <Link
-              className="btn btn-ghost btn-lg text-primary-content"
-              to="/sign-in"
-            >
+            <Link className="btn btn-outline btn-lg rounded-lg bg-white" to="/sign-in">
               {t("home.cta.signIn")}
             </Link>
           </div>
@@ -195,20 +162,51 @@ export default function Home() {
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div>
-      <div className="text-3xl md:text-4xl font-bold text-primary">{value}</div>
-      <div className="text-sm text-base-content/70 mt-1">{label}</div>
+    <div className="bg-white px-4 py-8 text-center">
+      <div className="text-4xl font-black tracking-tight text-[#102033]">{value}</div>
+      <div className="mt-1 text-sm font-bold text-[#536273]">{label}</div>
     </div>
   );
 }
 
-function Feature({ title, text }: { title: string; text: string }) {
+function FeatureTile({
+  icon,
+  color,
+  title,
+  text,
+}: {
+  icon: string;
+  color: string;
+  title: string;
+  text: string;
+}) {
   return (
-    <div className="card bg-base-100 shadow">
-      <div className="card-body">
-        <h3 className="card-title">{title}</h3>
-        <p className="text-sm text-base-content/70">{text}</p>
+    <article className="creative-tile p-5 transition hover:-translate-y-1 hover:shadow-xl">
+      <div className="creative-icon" style={{ backgroundColor: color }}>
+        {icon}
       </div>
+      <h3 className="mt-5 text-xl font-black tracking-tight">{title}</h3>
+      <p className="mt-3 text-sm font-medium leading-6 text-[#536273]">{text}</p>
+    </article>
+  );
+}
+
+function WorkflowStep({ number, text }: { number: string; text: string }) {
+  return (
+    <div className="flex items-start gap-4 rounded-lg border border-[#0f9f8f]/20 bg-white p-4">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#0f9f8f] text-sm font-black text-white">
+        {number}
+      </span>
+      <span className="font-medium text-[#24384f]">{text}</span>
+    </div>
+  );
+}
+
+function MiniMetric({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-lg bg-[#f5f5f3] p-3">
+      <div className="font-black">{value}</div>
+      <div className="mt-1 text-xs font-bold text-[#536273]">{label}</div>
     </div>
   );
 }

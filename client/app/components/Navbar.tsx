@@ -63,20 +63,26 @@ export function Navbar() {
   }
 
   return (
-    <nav className="navbar rounded-box shadow-base-300/20 shadow-sm">
-      <div className="w-full md:flex md:items-center md:gap-2">
+    <nav className="navbar sticky top-0 z-40 px-4">
+      <div className="mx-auto w-full max-w-7xl md:flex md:items-center md:gap-4">
         <div className="flex items-center justify-between">
           <div className="navbar-start items-center justify-between max-md:w-full">
             <Link
-              className="link text-base-content link-neutral text-xl font-bold no-underline"
+              className="flex items-center gap-2 text-base-content no-underline"
               to="/"
             >
-              CourseReport
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#0f9f8f] text-sm font-black text-white">
+                CR
+              </span>
+              <span className="text-lg font-black tracking-tight text-[#102033]">
+                Course Report
+              </span>
             </Link>
-            <div className="md:hidden">
+            <div className="flex items-center gap-2 md:hidden">
+              <LanguageSwitcher />
               <button
                 type="button"
-                className="collapse-toggle btn btn-outline btn-secondary btn-sm btn-square"
+                className="collapse-toggle btn btn-outline btn-sm btn-square"
                 data-collapse="#navbar-collapse"
                 aria-controls="navbar-collapse"
                 aria-label="Toggle navigation"
@@ -92,7 +98,7 @@ export function Navbar() {
           className="md:navbar-end collapse hidden grow basis-full max-md:overflow-hidden md:overflow-visible transition-[height] duration-300 max-md:w-full"
         >
           <div className="flex flex-col gap-2 max-md:mt-2 md:flex-row md:items-center md:justify-end">
-            <ul className="menu md:menu-horizontal gap-2 p-0 text-base">
+            <ul className="menu md:menu-horizontal gap-1 p-0 text-sm font-bold">
               <li>
                 <NavLink to="/" end>
                   {t("nav.home")}
@@ -146,16 +152,15 @@ export function Navbar() {
 
             </ul>
 
-            <div className="hidden md:flex items-center gap-2">
-              <LanguageSwitcher />
+            <div className="grid gap-2 border-t border-[#d8e0ea] pt-3 md:hidden">
               {user ? (
                 <>
-                  <Link className="btn btn-ghost btn-sm" to="/profile">
+                  <Link className="btn btn-outline btn-sm rounded-lg" to="/profile">
                     {t("nav.profile")}
                   </Link>
                   <button
                     type="button"
-                    className="btn btn-outline btn-sm"
+                    className="btn btn-outline btn-sm rounded-lg"
                     onClick={logout}
                   >
                     {t("nav.signOut")}
@@ -163,10 +168,37 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link className="btn btn-ghost btn-sm" to="/sign-in">
+                  <Link className="btn btn-outline btn-sm rounded-lg" to="/sign-in">
                     {t("nav.signIn")}
                   </Link>
-                  <Link className="btn btn-primary btn-sm" to="/sign-up">
+                  <Link className="btn btn-primary btn-sm rounded-lg" to="/sign-up">
+                    {t("nav.signUp")}
+                  </Link>
+                </>
+              )}
+            </div>
+
+            <div className="hidden md:flex items-center gap-2">
+              <LanguageSwitcher />
+              {user ? (
+                <>
+                  <Link className="btn btn-ghost btn-sm rounded-lg" to="/profile">
+                    {t("nav.profile")}
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm rounded-lg"
+                    onClick={logout}
+                  >
+                    {t("nav.signOut")}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link className="btn btn-ghost btn-sm rounded-lg" to="/sign-in">
+                    {t("nav.signIn")}
+                  </Link>
+                  <Link className="btn btn-primary btn-sm rounded-lg" to="/sign-up">
                     {t("nav.signUp")}
                   </Link>
                 </>

@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { API_URL, fetchMe } from "../lib/auth";
+import { pdfUrl } from "../lib/reportLanguage";
 import { PageLoader } from "../components/Spinner";
 
 type Report = {
@@ -17,7 +18,7 @@ type Report = {
 };
 
 export default function AdminReports() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
@@ -41,7 +42,7 @@ export default function AdminReports() {
   }, [navigate]);
 
   async function downloadPdf(id: number) {
-    const res = await fetch(`${API_URL}/reports/${id}/pdf`, {
+    const res = await fetch(pdfUrl(API_URL, id, i18n.language), {
       credentials: "include",
     });
     if (!res.ok) return;

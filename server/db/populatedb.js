@@ -95,6 +95,7 @@ CREATE TABLE IF NOT EXISTS student_evaluations (
   points NUMERIC(5,2),
   teacher_comment TEXT,
   progress_appreciation TEXT,
+  criteria JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -188,6 +189,9 @@ WHERE NOT EXISTS (SELECT 1 FROM inboxes WHERE type = 'shared');
 
 ALTER TABLE generated_reports
   ADD COLUMN IF NOT EXISTS content TEXT;
+
+ALTER TABLE student_evaluations
+  ADD COLUMN IF NOT EXISTS criteria JSONB NOT NULL DEFAULT '{}'::jsonb;
 `
 async function main() {
   console.log("seeding...")

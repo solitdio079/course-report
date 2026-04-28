@@ -1,6 +1,8 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { API_URL, fetchMe, type AuthUser } from "../lib/auth";
+import { pdfUrl } from "../lib/reportLanguage";
 import {
   ButtonContent,
   PageLoader,
@@ -39,6 +41,8 @@ const SHARED_ROLES = ["admin", "teacher", "social_relations", "accountant"];
 
 export default function Inbox() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const { i18n } = useTranslation();
   const [me, setMe] = useState<AuthUser | null>(null);
   const [scope, setScope] = useState<Scope>("individual");
   const [search, setSearch] = useState("");
@@ -91,6 +95,15 @@ export default function Inbox() {
       cancelled = true;
     };
   }, [navigate]);
+
+  useEffect(() => {
+    const recipient = params.get("recipientId");
+    if (!recipient) return;
+    setScope("individual");
+    setComposing(true);
+    setRecipientId(recipient);
+    setSubject(params.get("subject") || "");
+  }, [params]);
 
   // Debounce search
   useEffect(() => {
@@ -182,7 +195,7 @@ export default function Inbox() {
   }
 
   async function downloadAttachedReport(rid: number) {
-    const res = await fetch(`${API_URL}/reports/${rid}/pdf`, {
+    const res = await fetch(pdfUrl(API_URL, rid, i18n.language), {
       credentials: "include",
     });
     if (!res.ok) {

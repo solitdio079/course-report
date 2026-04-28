@@ -15,7 +15,7 @@ export default function About() {
   const { t } = useTranslation();
   return (
     <main className="min-h-screen">
-      <section className="relative overflow-hidden bg-gradient-to-br from-base-200 via-base-100 to-base-200">
+      <section className="relative overflow-hidden bg-[#eff9ff]">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-2 items-center">
           <div>
             <span className="badge badge-primary badge-outline mb-3">
@@ -34,13 +34,28 @@ export default function About() {
               </Link>
             </div>
           </div>
-          <div className="relative">
-            <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-primary/20 blur-2xl" />
-            <img
-              src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80"
-              alt=""
-              className="relative rounded-2xl shadow-xl object-cover w-full max-h-[480px]"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-[#cfe2ff] bg-white p-5 shadow-sm">
+              <div className="creative-icon bg-[#246bfe]">Cl</div>
+              <h2 className="mt-4 text-xl font-bold">{t("about.mission.b1.bold")}</h2>
+              <p className="mt-2 text-sm font-medium text-[#536273]">
+                {t("about.mission.b1.text")}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#b8eee6] bg-white p-5 shadow-sm">
+              <div className="creative-icon bg-[#0f9f8f]">Tr</div>
+              <h2 className="mt-4 text-xl font-bold">{t("about.mission.b2.bold")}</h2>
+              <p className="mt-2 text-sm font-medium text-[#536273]">
+                {t("about.mission.b2.text")}
+              </p>
+            </div>
+            <div className="rounded-lg border border-[#ffd5ce] bg-white p-5 shadow-sm sm:col-span-2">
+              <div className="creative-icon bg-[#f45d48]">In</div>
+              <h2 className="mt-4 text-xl font-bold">{t("about.mission.b3.bold")}</h2>
+              <p className="mt-2 text-sm font-medium text-[#536273]">
+                {t("about.mission.b3.text")}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -127,16 +142,16 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-primary text-primary-content">
+      <section className="bg-[#dff5f1] text-[#102033]">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
           <h2 className="text-3xl font-semibold">{t("about.cta2.title")}</h2>
-          <p className="mt-3 opacity-90">{t("about.cta2.subtitle")}</p>
+          <p className="mt-3 font-medium text-[#24384f]">{t("about.cta2.subtitle")}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link className="btn btn-secondary btn-lg" to="/contact">
+            <Link className="btn btn-primary btn-lg" to="/contact">
               {t("about.cta2.contact")}
             </Link>
             <Link
-              className="btn btn-ghost btn-lg text-primary-content"
+              className="btn btn-outline btn-lg bg-white"
               to="/sign-up"
             >
               {t("about.cta.parent")}

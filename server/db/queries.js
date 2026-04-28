@@ -396,12 +396,13 @@ async function createEvaluation({
   points,
   teacherComment,
   progressAppreciation,
+  criteria,
 }) {
   const { rows } = await pool.query(
     `INSERT INTO student_evaluations
-       (student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation, created_at`,
+       (student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation, criteria)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation, criteria, created_at`,
     [
       studentId,
       courseId || null,
@@ -409,6 +410,7 @@ async function createEvaluation({
       points ?? null,
       teacherComment || null,
       progressAppreciation || null,
+      criteria || {},
     ]
   )
   return rows[0]
@@ -416,7 +418,7 @@ async function createEvaluation({
 
 async function listEvaluationsForTeacher(teacherUserId) {
   const { rows } = await pool.query(
-    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.created_at,
+    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
             s.first_name, s.last_name, c.name AS course_name
      FROM student_evaluations e
      JOIN students s ON s.id = e.student_id
@@ -431,7 +433,7 @@ async function listEvaluationsForTeacher(teacherUserId) {
 
 async function listEvaluationsForStudent(studentId) {
   const { rows } = await pool.query(
-    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.created_at,
+    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
             u.full_name AS teacher_name, c.name AS course_name
      FROM student_evaluations e
      LEFT JOIN course_users u ON u.id = e.teacher_id

@@ -15,6 +15,7 @@ const socialRoutes = require("./routes/social")
 const accountingRoutes = require("./routes/accounting")
 const notificationsRoutes = require("./routes/notifications")
 const adminRoutes = require("./routes/admin")
+const { ensureSchema } = require("./db/ensureSchema")
 
 const app = express()
 
@@ -89,6 +90,13 @@ app.use((err, req, res, next) => {
 })
 
 const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
-})
+ensureSchema()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`)
+    })
+  })
+  .catch((err) => {
+    console.error("Could not prepare database schema", err)
+    process.exitCode = 1
+  })

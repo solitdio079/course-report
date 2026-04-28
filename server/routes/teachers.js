@@ -9,6 +9,40 @@ const router = express.Router()
 
 router.use(requireAuth, requireRole("teacher"))
 
+function reportLanguage(req) {
+  const raw = req.body?.language || req.query?.lang
+  return String(raw || "").toLowerCase().startsWith("tr") ? "tr" : "en"
+}
+
+const EVALUATION_CRITERIA = new Set([
+  "vocabulary",
+  "grammar",
+  "listening_comprehension",
+  "reading_comprehension",
+  "speaking",
+  "writing",
+  "pronunciation",
+  "confidence",
+  "autonomy",
+])
+
+const EVALUATION_STATUSES = new Set([
+  "in_progress",
+  "needs_work",
+  "priority",
+])
+
+function normalizeCriteria(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return {}
+
+  return Object.fromEntries(
+    Object.entries(input).filter(
+      ([criterion, status]) =>
+        EVALUATION_CRITERIA.has(criterion) && EVALUATION_STATUSES.has(status)
+    )
+  )
+}
+
 router.get("/courses", async (req, res, next) => {
   try {
     const courses = await queries.listCoursesForTeacher(req.user.id)
@@ -33,13 +67,14 @@ router.get("/students/:id", async (req, res, next) => {
     const allowed = await queries.isTeacherForStudent(req.user.id, studentId)
     if (!allowed) return res.status(403).json({ message: "Forbidden" })
 
-    const [student, evaluations] = await Promise.all([
+    const [student, evaluations, parents] = await Promise.all([
       queries.findStudentById(studentId),
       queries.listEvaluationsForStudent(studentId),
+      queries.listParentsForStudent(studentId),
     ])
     if (!student) return res.status(404).json({ message: "Not found" })
 
-    res.json({ student, evaluations })
+    res.json({ student, evaluations, parents })
   } catch (err) {
     next(err)
   }
@@ -58,9 +93,10 @@ router.post(
   "/evaluations",
   body("studentId").isInt({ min: 1 }),
   body("courseId").optional({ values: "falsy" }).isInt({ min: 1 }),
-  body("points").optional({ values: "falsy" }).isFloat({ min: 0, max: 100 }),
+  body("points").isInt({ min: 1, max: 5 }),
   body("teacherComment").optional({ values: "falsy" }).isString(),
   body("progressAppreciation").optional({ values: "falsy" }).isString(),
+  body("criteria").optional().isObject(),
   async (req, res, next) => {
     try {
       const errors = validationResult(req)
@@ -82,6 +118,7 @@ router.post(
         points: req.body.points != null ? Number(req.body.points) : null,
         teacherComment: req.body.teacherComment,
         progressAppreciation: req.body.progressAppreciation,
+        criteria: normalizeCriteria(req.body.criteria),
       })
       res.status(201).json({ evaluation })
     } catch (err) {
@@ -120,10 +157,14 @@ router.post(
 
       const student = await queries.findStudentById(studentId)
       if (!student) return res.status(404).json({ message: "Not found" })
+      const language = reportLanguage(req)
 
       const title =
         req.body.title ||
-        `Course report — ${student.first_name} ${student.last_name}`
+        `${language === "tr" ? "Aylık ders raporu" : "Monthly course report"} — ${student.first_name} ${student.last_name} — ${new Date().toLocaleString(language === "tr" ? "tr-TR" : "en-US", {
+          month: "long",
+          year: "numeric",
+        })}`
 
       const report = await queries.createGeneratedReport({
         studentId,
@@ -196,7 +237,12 @@ router.get("/reports/:id/pdf", async (req, res, next) => {
       `attachment; filename="${safeName}"`
     )
 
-    buildReportPdf({ report, evaluations, stream: res })
+    buildReportPdf({
+      report,
+      evaluations,
+      stream: res,
+      language: reportLanguage(req),
+    })
   } catch (err) {
     next(err)
   }

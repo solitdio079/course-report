@@ -6,6 +6,216 @@
 
 @source "../node_modules/flyonui/flyonui.js";
 
+:root {
+  color-scheme: light;
+  --cr-ink: #102033;
+  --cr-muted: #536273;
+  --cr-surface: #ffffff;
+  --cr-soft: #f4f7fb;
+  --cr-line: #d8e0ea;
+  --cr-navy: #102033;
+  --cr-blue: #246bfe;
+  --cr-teal: #0f9f8f;
+  --cr-coral: #f45d48;
+  --cr-gold: #ffcb45;
+  --cr-purple: #6d5dfc;
+}
+
+html {
+  background: var(--cr-soft);
+}
+
+body {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--cr-ink);
+  background:
+    linear-gradient(180deg, #ffffff 0, var(--cr-soft) 360px),
+    var(--cr-soft);
+}
+
+.navbar {
+  border-radius: 0;
+  border-bottom: 1px solid rgb(16 32 51 / 0.12);
+  background: rgb(255 255 255 / 0.94);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 8px 24px rgb(16 32 51 / 0.07);
+}
+
+.navbar .menu a {
+  border-radius: 8px;
+  color: var(--cr-ink);
+  opacity: 1;
+}
+
+.navbar .menu a:hover {
+  background: #e7f5f2;
+  color: #075f56;
+}
+
+.navbar .menu a.active,
+.navbar .menu a[aria-current="page"] {
+  background: #dff5f1;
+  color: #075f56;
+}
+
+.navbar .btn-ghost {
+  color: var(--cr-ink);
+}
+
+.navbar .btn-ghost:hover {
+  background: #e7f5f2;
+  color: #075f56;
+}
+
+.card {
+  border: 1px solid rgb(16 32 51 / 0.1);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.98);
+  box-shadow: 0 18px 40px rgb(16 32 51 / 0.08);
+}
+
+.card-body {
+  border-radius: 8px;
+}
+
+.input,
+.select,
+.textarea {
+  border-color: rgb(16 32 51 / 0.16);
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--cr-teal);
+  outline-color: rgb(15 159 143 / 0.22);
+}
+
+.btn-primary {
+  border-color: var(--cr-teal);
+  background: var(--cr-teal);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  border-color: #0b8276;
+  background: #0b8276;
+}
+
+.btn-outline {
+  border-color: rgb(16 32 51 / 0.28);
+  color: var(--cr-ink);
+}
+
+.btn-outline:hover {
+  border-color: var(--cr-teal);
+  background: #e7f5f2;
+  color: #075f56;
+}
+
+.badge-primary {
+  border-color: var(--cr-blue);
+  background: var(--cr-blue);
+  color: #ffffff;
+}
+
+.badge-ghost,
+.badge-outline {
+  border-color: rgb(16 32 51 / 0.28);
+  background: #f7fafc;
+  color: var(--cr-ink);
+}
+
+.link {
+  color: #075f56;
+}
+
+.label-text,
+.footer-title,
+th,
+td {
+  color: var(--cr-ink);
+}
+
+.table :where(thead, tfoot) {
+  color: var(--cr-ink);
+}
+
+.alert {
+  border-radius: 8px;
+}
+
+.text-base-content\/50,
+.text-base-content\/55,
+.text-base-content\/60,
+.text-base-content\/65,
+.text-base-content\/70,
+.text-base-content\/75,
+.text-base-content\/80 {
+  color: var(--cr-muted);
+  opacity: 1;
+}
+
+.bg-base-200,
+.bg-base-200\/60 {
+  background-color: #eaf0f7;
+}
+
+.bg-base-300 {
+  background-color: #dce8f5;
+}
+
+.bg-base-content,
+.bg-neutral,
+.bg-neutral-content {
+  background-color: #e7f5f2;
+  color: var(--cr-ink);
+}
+
+.bg-primary {
+  background-color: var(--cr-teal);
+}
+
+.text-primary,
+.text-secondary {
+  color: #075f56;
+}
+
+.text-primary-content {
+  color: #ffffff;
+}
+
+.bg-primary .text-primary-content,
+.bg-primary.text-primary-content {
+  color: #ffffff;
+}
+
+.creative-tile {
+  border-radius: 8px;
+  border: 1px solid rgb(16 32 51 / 0.1);
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgb(16 32 51 / 0.08);
+}
+
+.creative-icon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 800;
+}
+
 @keyframes hero-slide-up {
   from {
     opacity: 0;
