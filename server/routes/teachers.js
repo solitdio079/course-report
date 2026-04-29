@@ -32,6 +32,8 @@ const EVALUATION_STATUSES = new Set([
   "priority",
 ])
 
+const SESSION_STATUSES = new Set(["planned", "completed", "cancelled"])
+
 function normalizeCriteria(input) {
   if (!input || typeof input !== "object" || Array.isArray(input)) return {}
 
@@ -41,6 +43,10 @@ function normalizeCriteria(input) {
         EVALUATION_CRITERIA.has(criterion) && EVALUATION_STATUSES.has(status)
     )
   )
+}
+
+function normalizeSessionStatus(input) {
+  return SESSION_STATUSES.has(input) ? input : "planned"
 }
 
 router.get("/courses", async (req, res, next) => {
@@ -67,18 +73,95 @@ router.get("/students/:id", async (req, res, next) => {
     const allowed = await queries.isTeacherForStudent(req.user.id, studentId)
     if (!allowed) return res.status(403).json({ message: "Forbidden" })
 
-    const [student, evaluations, parents] = await Promise.all([
+    const [student, evaluations, parents, sessions] = await Promise.all([
       queries.findStudentById(studentId),
       queries.listEvaluationsForStudent(studentId),
       queries.listParentsForStudent(studentId),
+      queries.listSessionsForTeacherStudent(req.user.id, studentId),
     ])
     if (!student) return res.status(404).json({ message: "Not found" })
 
-    res.json({ student, evaluations, parents })
+    res.json({ student, evaluations, parents, sessions })
   } catch (err) {
     next(err)
   }
 })
+
+router.get("/sessions", async (req, res, next) => {
+  try {
+    const sessions = await queries.listSessionsForTeacher(req.user.id)
+    res.json({ sessions })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post(
+  "/sessions",
+  body("studentId").isInt({ min: 1 }),
+  body("courseId").optional({ values: "falsy" }).isInt({ min: 1 }),
+  body("sessionDate").isISO8601(),
+  body("objectives").optional({ values: "falsy" }).isString(),
+  body("status").optional().isIn(["planned", "completed", "cancelled"]),
+  body("notes").optional({ values: "falsy" }).isString(),
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+      }
+
+      const studentId = Number(req.body.studentId)
+      const allowed = await queries.isTeacherForStudent(req.user.id, studentId)
+      if (!allowed) return res.status(403).json({ message: "Forbidden" })
+
+      const session = await queries.createSession({
+        teacherUserId: req.user.id,
+        studentId,
+        courseId: req.body.courseId ? Number(req.body.courseId) : null,
+        sessionDate: req.body.sessionDate,
+        objectives: req.body.objectives,
+        status: normalizeSessionStatus(req.body.status),
+        notes: req.body.notes,
+      })
+      res.status(201).json({ session })
+    } catch (err) {
+      next(err)
+    }
+  }
+)
+
+router.patch(
+  "/sessions/:id",
+  body("courseId").optional({ values: "falsy" }).isInt({ min: 1 }),
+  body("sessionDate").optional().isISO8601(),
+  body("objectives").optional({ values: "falsy" }).isString(),
+  body("status").optional().isIn(["planned", "completed", "cancelled"]),
+  body("notes").optional({ values: "falsy" }).isString(),
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+      }
+      const session = await queries.updateSessionForTeacher(
+        req.user.id,
+        Number(req.params.id),
+        {
+          courseId: req.body.courseId ? Number(req.body.courseId) : undefined,
+          sessionDate: req.body.sessionDate,
+          objectives: req.body.objectives,
+          status: req.body.status,
+          notes: req.body.notes,
+        }
+      )
+      if (!session) return res.status(404).json({ message: "Not found" })
+      res.json({ session })
+    } catch (err) {
+      next(err)
+    }
+  }
+)
 
 router.get("/evaluations", async (req, res, next) => {
   try {
@@ -93,6 +176,7 @@ router.post(
   "/evaluations",
   body("studentId").isInt({ min: 1 }),
   body("courseId").optional({ values: "falsy" }).isInt({ min: 1 }),
+  body("sessionId").optional({ values: "falsy" }).isInt({ min: 1 }),
   body("points").isInt({ min: 1, max: 5 }),
   body("teacherComment").optional({ values: "falsy" }).isString(),
   body("progressAppreciation").optional({ values: "falsy" }).isString(),
@@ -111,10 +195,25 @@ router.post(
       )
       if (!allowed) return res.status(403).json({ message: "Forbidden" })
 
+      let session = null
+      if (req.body.sessionId) {
+        session = await queries.findSessionForTeacher(
+          req.user.id,
+          Number(req.body.sessionId)
+        )
+        if (!session) return res.status(404).json({ message: "Session not found" })
+        if (Number(session.student_id) !== studentId) {
+          return res.status(400).json({ message: "Session does not belong to this student" })
+        }
+      }
+
       const evaluation = await queries.createEvaluation({
         teacherUserId: req.user.id,
         studentId,
-        courseId: req.body.courseId ? Number(req.body.courseId) : null,
+        courseId: req.body.courseId
+          ? Number(req.body.courseId)
+          : session?.course_id || null,
+        sessionId: session?.id || null,
         points: req.body.points != null ? Number(req.body.points) : null,
         teacherComment: req.body.teacherComment,
         progressAppreciation: req.body.progressAppreciation,

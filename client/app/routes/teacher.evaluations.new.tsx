@@ -20,6 +20,18 @@ type StudentRow = {
   course_id: number;
   course_name: string;
 };
+type SessionRow = {
+  id: number;
+  student_id: number;
+  course_id: number | null;
+  session_date: string;
+  objectives: string | null;
+  status: "planned" | "completed" | "cancelled";
+  first_name: string;
+  last_name: string;
+  course_name: string | null;
+  evaluation_id: number | null;
+};
 
 export default function NewEvaluation() {
   const navigate = useNavigate();
@@ -28,9 +40,11 @@ export default function NewEvaluation() {
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [students, setStudents] = useState<StudentRow[]>([]);
+  const [sessions, setSessions] = useState<SessionRow[]>([]);
 
   const [studentId, setStudentId] = useState(params.get("studentId") || "");
   const [courseId, setCourseId] = useState(params.get("courseId") || "");
+  const [sessionId, setSessionId] = useState(params.get("sessionId") || "");
   const [points, setPoints] = useState(3);
   const [comment, setComment] = useState("");
   const [progress, setProgress] = useState("");
@@ -48,18 +62,29 @@ export default function NewEvaluation() {
       if (!me) return navigate("/teacher/sign-in");
       if (me.role !== "teacher") return navigate("/");
 
-      const [cRes, sRes] = await Promise.all([
+      const [cRes, sRes, sessionsRes] = await Promise.all([
         fetch(`${API_URL}/teachers/courses`, { credentials: "include" }),
         fetch(`${API_URL}/teachers/students`, { credentials: "include" }),
+        fetch(`${API_URL}/teachers/sessions`, { credentials: "include" }),
       ]);
       if (cRes.ok) setCourses((await cRes.json()).courses || []);
       if (sRes.ok) setStudents((await sRes.json()).students || []);
+      if (sessionsRes.ok) setSessions((await sessionsRes.json()).sessions || []);
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [navigate]);
+
+  useEffect(() => {
+    if (!sessionId || sessions.length === 0) return;
+    const session = sessions.find((item) => String(item.id) === sessionId);
+    if (!session) return;
+    setStudentId(String(session.student_id));
+    if (session.course_id) setCourseId(String(session.course_id));
+    if (session.objectives && !progress) setProgress(session.objectives);
+  }, [sessionId, sessions, progress]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +98,7 @@ export default function NewEvaluation() {
         body: JSON.stringify({
           studentId: Number(studentId),
           courseId: courseId ? Number(courseId) : undefined,
+          sessionId: sessionId ? Number(sessionId) : undefined,
           points,
           teacherComment: comment || undefined,
           progressAppreciation: progress || undefined,
@@ -158,6 +184,33 @@ export default function NewEvaluation() {
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="form-control md:col-span-2">
+              <div className="label">
+                <span className="label-text">Session</span>
+              </div>
+              <select
+                className="select select-bordered"
+                value={sessionId}
+                onChange={(e) => setSessionId(e.target.value)}
+              >
+                <option value="">No planned session</option>
+                {sessions
+                  .filter((session) => !session.evaluation_id)
+                  .map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {new Date(session.session_date).toLocaleString()} -{" "}
+                      {session.first_name} {session.last_name}
+                      {session.course_name ? ` - ${session.course_name}` : ""}
+                    </option>
+                  ))}
+              </select>
+              {sessionId && (
+                <div className="mt-2 rounded-lg border border-[#ffd8ad] bg-[#fff9f0] p-3 text-sm text-base-content/70">
+                  This evaluation will be attached to the selected session.
+                </div>
+              )}
             </label>
 
             <div className="form-control">

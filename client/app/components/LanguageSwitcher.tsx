@@ -24,7 +24,7 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
 
   return (
     <div
-      className={`join ${className}`.trim()}
+      className={`join rounded-lg bg-[#111111] p-1 shadow-sm ${className}`.trim()}
       role="group"
       aria-label={t("language")}
     >
@@ -33,8 +33,10 @@ export function LanguageSwitcher({ className = "" }: { className?: string }) {
           key={lng}
           type="button"
           onClick={() => setLang(lng)}
-          className={`join-item btn btn-xs ${
-            i18n.language === lng ? "btn-primary" : "btn-ghost"
+          className={`join-item btn btn-xs border-0 ${
+            i18n.language === lng
+              ? "bg-white text-[#111111] hover:bg-white hover:text-[#111111]"
+              : "bg-[#111111] text-white hover:bg-[#2b2b2b] hover:text-white"
           }`}
           aria-pressed={i18n.language === lng}
         >

@@ -34,6 +34,28 @@ type Student = {
 
 const STATUSES = ["pending", "paid", "overdue", "cancelled"] as const;
 
+const PAYMENT_STATUS_STYLES: Record<
+  Payment["status"],
+  { select: string; label: string }
+> = {
+  pending: {
+    select: "border-[#f2a900] bg-[#fff5cc] text-[#6f4d00]",
+    label: "bg-[#fff5cc] text-[#6f4d00] border-[#f2a900]",
+  },
+  paid: {
+    select: "border-[#24a148] bg-[#defbe6] text-[#0e5f2c]",
+    label: "bg-[#defbe6] text-[#0e5f2c] border-[#24a148]",
+  },
+  overdue: {
+    select: "border-[#da1e28] bg-[#fff1f1] text-[#8f1118]",
+    label: "bg-[#fff1f1] text-[#8f1118] border-[#da1e28]",
+  },
+  cancelled: {
+    select: "border-[#8d8d8d] bg-[#f4f4f4] text-[#393939]",
+    label: "bg-[#f4f4f4] text-[#393939] border-[#8d8d8d]",
+  },
+};
+
 export default function AccountantPayments() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -310,8 +332,13 @@ export default function AccountantPayments() {
                       <td>{p.due_date?.slice(0, 10)}</td>
                       <td>{p.paid_date?.slice(0, 10) || "—"}</td>
                       <td>
+                        <div
+                          className={`mb-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-bold capitalize ${PAYMENT_STATUS_STYLES[p.status].label}`}
+                        >
+                          {p.status}
+                        </div>
                         <select
-                          className="select select-bordered select-xs"
+                          className={`select select-bordered select-xs font-bold capitalize ${PAYMENT_STATUS_STYLES[p.status].select}`}
                           value={p.status}
                           onChange={(e) =>
                             setStatus(p.id, e.target.value as Payment["status"])

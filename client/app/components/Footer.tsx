@@ -6,14 +6,12 @@ export function Footer() {
   return (
     <footer className="footer border-t border-[#f8760f]/20 bg-white p-10 text-[#2b1708]">
       <aside className="gap-6">
-        <div className="flex items-center gap-2 text-xl font-black text-[#2b1708]">
-          <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#fff0dd] p-1 ring-1 ring-[#f8760f]/25">
-            <img
-              src="/hello-logo.png"
-              alt=""
-              className="h-full w-full object-contain"
-            />
-          </span>
+        <div className="flex items-center gap-3 text-xl font-black text-[#2b1708]">
+          <img
+            src="/hello-academy-logo.png"
+            alt="Hello Academy"
+            className="h-10 w-28 object-contain object-right"
+          />
           <span>Hello Academy</span>
         </div>
         <p className="max-w-xs text-sm text-[#6d5a4a]">{t("footer.tagline")}</p>

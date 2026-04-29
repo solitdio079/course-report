@@ -31,6 +31,7 @@ type ParentContact = {
 type Evaluation = {
   id: number;
   course_id: number | null;
+  session_id: number | null;
   points: string | null;
   teacher_comment: string | null;
   progress_appreciation: string | null;
@@ -38,6 +39,22 @@ type Evaluation = {
   created_at: string;
   teacher_name: string | null;
   course_name: string | null;
+  session_date: string | null;
+  session_objectives: string | null;
+  session_status: string | null;
+};
+type Session = {
+  id: number;
+  student_id: number;
+  course_id: number | null;
+  session_date: string;
+  objectives: string | null;
+  status: "planned" | "completed" | "cancelled";
+  notes: string | null;
+  course_name: string | null;
+  evaluation_id: number | null;
+  evaluation_points: string | null;
+  evaluation_comment: string | null;
 };
 
 export default function TeacherStudentDetail() {
@@ -48,9 +65,13 @@ export default function TeacherStudentDetail() {
   const [student, setStudent] = useState<Student | null>(null);
   const [parents, setParents] = useState<ParentContact[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [includeCharts, setIncludeCharts] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionDate, setSessionDate] = useState("");
+  const [objectives, setObjectives] = useState("");
+  const [creatingSession, setCreatingSession] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,12 +92,47 @@ export default function TeacherStudentDetail() {
       setStudent(data.student);
       setEvaluations(data.evaluations || []);
       setParents(data.parents || []);
+      setSessions(data.sessions || []);
       setLoading(false);
     })();
     return () => {
       cancelled = true;
     };
   }, [id, navigate]);
+
+  async function createSession(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setCreatingSession(true);
+    try {
+      const res = await fetch(`${API_URL}/teachers/sessions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          studentId: Number(id),
+          sessionDate,
+          objectives: objectives || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.errors?.[0]?.msg || data?.message || "Could not create session");
+        return;
+      }
+      setSessionDate("");
+      setObjectives("");
+      const refreshed = await fetch(`${API_URL}/teachers/students/${id}`, {
+        credentials: "include",
+      });
+      if (refreshed.ok) {
+        const payload = await refreshed.json();
+        setSessions(payload.sessions || []);
+      }
+    } finally {
+      setCreatingSession(false);
+    }
+  }
 
   async function generateReport() {
     setError(null);
@@ -268,6 +324,12 @@ export default function TeacherStudentDetail() {
                     {e.course_name && ` • ${e.course_name}`}
                     {e.teacher_name && ` • by ${e.teacher_name}`}
                   </div>
+                  {e.session_date && (
+                    <div className="mt-1 rounded-lg border border-[#ffd8ad] bg-[#fff9f0] px-3 py-2 text-sm text-base-content/70">
+                      Session: {new Date(e.session_date).toLocaleString()}
+                      {e.session_objectives ? ` - ${e.session_objectives}` : ""}
+                    </div>
+                  )}
                   {e.points != null && (
                     <div className="mt-1">
                       <StarRating value={Number(e.points)} readOnly />
@@ -300,6 +362,85 @@ export default function TeacherStudentDetail() {
                       );
                     })}
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="card-title">Sessions</h2>
+              <p className="text-sm text-base-content/60">
+                Plan future lessons and attach evaluations after each session.
+              </p>
+            </div>
+            <Link className="btn btn-outline btn-sm bg-white" to={`/teacher/sessions?studentId=${id}`}>
+              Calendar
+            </Link>
+          </div>
+
+          <form className="mt-4 grid gap-3 md:grid-cols-[220px_1fr_auto]" onSubmit={createSession}>
+            <input
+              className="input input-bordered"
+              type="datetime-local"
+              value={sessionDate}
+              onChange={(e) => setSessionDate(e.target.value)}
+              required
+            />
+            <input
+              className="input input-bordered"
+              value={objectives}
+              onChange={(e) => setObjectives(e.target.value)}
+              placeholder="Objectives for the next session"
+            />
+            <button className="btn btn-primary" disabled={creatingSession || !sessionDate}>
+              <ButtonContent loading={creatingSession} loadingLabel="Planning...">
+                Plan
+              </ButtonContent>
+            </button>
+          </form>
+
+          {sessions.length === 0 ? (
+            <p className="mt-4 rounded-lg bg-base-200 p-3 text-sm text-base-content/60">
+              No sessions planned for this student yet.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-base-300">
+              {sessions.map((session) => (
+                <li key={session.id} className="py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="font-medium">
+                        {new Date(session.session_date).toLocaleString()}
+                        {session.course_name ? ` - ${session.course_name}` : ""}
+                      </div>
+                      <div className="mt-1 text-sm text-base-content/70">
+                        {session.objectives || "No objectives added yet."}
+                      </div>
+                    </div>
+                    <span className="badge badge-outline capitalize">{session.status}</span>
+                  </div>
+                  {session.evaluation_id ? (
+                    <div className="mt-2 rounded-lg bg-success/10 p-3 text-sm text-success">
+                      Evaluation attached
+                      {session.evaluation_points != null && (
+                        <div className="mt-1">
+                          <StarRating value={Number(session.evaluation_points)} readOnly />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Link
+                      className="btn btn-primary btn-xs mt-2"
+                      to={`/teacher/evaluations/new?sessionId=${session.id}`}
+                    >
+                      Add evaluation
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

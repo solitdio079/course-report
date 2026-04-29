@@ -67,19 +67,14 @@ export function Navbar() {
         <div className="flex items-center justify-between">
           <div className="navbar-start items-center justify-between max-md:w-full">
             <Link
-              className="flex items-center gap-2 text-base-content no-underline"
+              className="flex items-center text-base-content no-underline"
               to="/"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#fff0dd] p-1 ring-1 ring-[#f8760f]/25">
-                <img
-                  src="/hello-logo.png"
-                  alt=""
-                  className="h-full w-full object-contain"
-                />
-              </span>
-              <span className="text-lg font-black tracking-tight text-[#2b1708]">
-                Hello Academy
-              </span>
+              <img
+                src="/hello-academy-logo.png"
+                alt="Hello Academy"
+                className="h-10 w-28 object-contain object-right"
+              />
             </Link>
             <div className="flex items-center gap-2 md:hidden">
               <LanguageSwitcher />

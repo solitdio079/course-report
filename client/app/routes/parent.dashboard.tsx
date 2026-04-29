@@ -42,6 +42,20 @@ type ReportItem = {
   last_name: string | null;
   author_name: string | null;
 };
+type Session = {
+  id: number;
+  student_id: number;
+  session_date: string;
+  objectives: string | null;
+  status: "planned" | "completed" | "cancelled";
+  first_name: string;
+  last_name: string;
+  course_name: string | null;
+  teacher_name: string | null;
+  evaluation_id: number | null;
+  evaluation_points: string | null;
+  evaluation_comment: string | null;
+};
 
 export default function ParentDashboard() {
   const { t, i18n } = useTranslation();
@@ -52,6 +66,7 @@ export default function ParentDashboard() {
   const [notifications, setNotifications] = useState<Notif[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -81,6 +96,7 @@ export default function ParentDashboard() {
         loadNotifications(),
         loadPayments(),
         loadReports(),
+        loadSessions(),
       ]);
       setLoading(false);
     })();
@@ -123,6 +139,15 @@ export default function ParentDashboard() {
     if (!res || !res.ok) return;
     const data = await res.json().catch(() => ({}));
     setReports(data?.reports || []);
+  }
+
+  async function loadSessions() {
+    const res = await fetch(`${API_URL}/parents/sessions`, {
+      credentials: "include",
+    }).catch(() => null);
+    if (!res || !res.ok) return;
+    const data = await res.json().catch(() => ({}));
+    setSessions(data?.sessions || []);
   }
 
   async function downloadReport(id: number) {
@@ -237,6 +262,45 @@ export default function ParentDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        <div className="card bg-base-100 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title">Upcoming sessions</h2>
+            {sessions.length === 0 ? (
+              <p className="text-base-content/70">No sessions planned yet.</p>
+            ) : (
+              <ul className="divide-y divide-base-300">
+                {sessions.slice(0, 5).map((session) => (
+                  <li key={session.id} className="py-2 text-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-medium">
+                          {session.first_name} {session.last_name}
+                        </div>
+                        <div className="text-xs text-base-content/60">
+                          {new Date(session.session_date).toLocaleString()}
+                          {session.course_name ? ` - ${session.course_name}` : ""}
+                          {session.teacher_name ? ` - ${session.teacher_name}` : ""}
+                        </div>
+                      </div>
+                      <span className="badge badge-outline capitalize">
+                        {session.status}
+                      </span>
+                    </div>
+                    {session.objectives && (
+                      <p className="mt-2 text-base-content/70">{session.objectives}</p>
+                    )}
+                    {session.evaluation_id && (
+                      <p className="mt-2 rounded-lg bg-success/10 p-2 text-success">
+                        Evaluation attached: {session.evaluation_points || "-"} stars
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
         <div className="card bg-base-100 shadow-xl">
           <div className="card-body">
             <div className="flex items-center justify-between">

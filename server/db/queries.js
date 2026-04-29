@@ -389,10 +389,140 @@ async function isTeacherForStudent(teacherUserId, studentId) {
   return rows.length > 0
 }
 
+async function createSession({
+  teacherUserId,
+  studentId,
+  courseId,
+  sessionDate,
+  objectives,
+  status,
+  notes,
+}) {
+  const { rows } = await pool.query(
+    `INSERT INTO sessions
+       (student_id, course_id, teacher_id, session_date, objectives, status, notes)
+     VALUES ($1, $2, $3, $4, $5, COALESCE($6, 'planned'), $7)
+     RETURNING id, student_id, course_id, teacher_id, session_date, objectives, status, notes, created_at, updated_at`,
+    [
+      studentId,
+      courseId || null,
+      teacherUserId,
+      sessionDate,
+      objectives || null,
+      status || null,
+      notes || null,
+    ]
+  )
+  return rows[0]
+}
+
+async function findSessionForTeacher(teacherUserId, sessionId) {
+  const { rows } = await pool.query(
+    `SELECT id, student_id, course_id, teacher_id, session_date, objectives, status, notes, created_at, updated_at
+     FROM sessions
+     WHERE id = $1 AND teacher_id = $2
+     LIMIT 1`,
+    [sessionId, teacherUserId]
+  )
+  return rows[0] || null
+}
+
+async function updateSessionForTeacher(teacherUserId, sessionId, fields) {
+  const { rows } = await pool.query(
+    `UPDATE sessions SET
+       session_date = COALESCE($3, session_date),
+       course_id = COALESCE($4, course_id),
+       objectives = COALESCE($5, objectives),
+       status = COALESCE($6, status),
+       notes = COALESCE($7, notes),
+       updated_at = CURRENT_TIMESTAMP
+     WHERE id = $1 AND teacher_id = $2
+     RETURNING id, student_id, course_id, teacher_id, session_date, objectives, status, notes, created_at, updated_at`,
+    [
+      sessionId,
+      teacherUserId,
+      fields.sessionDate || null,
+      fields.courseId || null,
+      fields.objectives ?? null,
+      fields.status || null,
+      fields.notes ?? null,
+    ]
+  )
+  return rows[0] || null
+}
+
+async function listSessionsForTeacher(teacherUserId) {
+  const { rows } = await pool.query(
+    `SELECT sess.id, sess.student_id, sess.course_id, sess.teacher_id, sess.session_date,
+            sess.objectives, sess.status, sess.notes, sess.created_at, sess.updated_at,
+            st.first_name, st.last_name, st.course_email,
+            c.name AS course_name,
+            e.id AS evaluation_id, e.points AS evaluation_points,
+            e.teacher_comment AS evaluation_comment, e.created_at AS evaluation_created_at
+     FROM sessions sess
+     JOIN students st ON st.id = sess.student_id
+     LEFT JOIN courses c ON c.id = sess.course_id
+     LEFT JOIN student_evaluations e ON e.session_id = sess.id
+     WHERE sess.teacher_id = $1
+     ORDER BY sess.session_date ASC`,
+    [teacherUserId]
+  )
+  return rows
+}
+
+async function listSessionsForTeacherStudent(teacherUserId, studentId) {
+  const { rows } = await pool.query(
+    `SELECT sess.id, sess.student_id, sess.course_id, sess.teacher_id, sess.session_date,
+            sess.objectives, sess.status, sess.notes, sess.created_at, sess.updated_at,
+            c.name AS course_name,
+            e.id AS evaluation_id, e.points AS evaluation_points,
+            e.teacher_comment AS evaluation_comment, e.created_at AS evaluation_created_at
+     FROM sessions sess
+     LEFT JOIN courses c ON c.id = sess.course_id
+     LEFT JOIN student_evaluations e ON e.session_id = sess.id
+     WHERE sess.teacher_id = $1 AND sess.student_id = $2
+     ORDER BY sess.session_date DESC`,
+    [teacherUserId, studentId]
+  )
+  return rows
+}
+
+async function listSessionsForParentUser(parentUserId, studentId = null) {
+  const params = [parentUserId]
+  let studentFilter = ""
+  if (studentId) {
+    params.push(studentId)
+    studentFilter = `AND sess.student_id = $${params.length}`
+  }
+  const { rows } = await pool.query(
+    `SELECT sess.id, sess.student_id, sess.course_id, sess.teacher_id, sess.session_date,
+            sess.objectives, sess.status, sess.notes, sess.created_at, sess.updated_at,
+            st.first_name, st.last_name,
+            c.name AS course_name,
+            u.full_name AS teacher_name,
+            e.id AS evaluation_id, e.points AS evaluation_points,
+            e.teacher_comment AS evaluation_comment,
+            e.progress_appreciation AS evaluation_progress,
+            e.created_at AS evaluation_created_at
+     FROM sessions sess
+     JOIN students st ON st.id = sess.student_id
+     JOIN student_parents sp ON sp.student_id = st.id
+     JOIN parents p ON p.id = sp.parent_id
+     LEFT JOIN courses c ON c.id = sess.course_id
+     LEFT JOIN course_users u ON u.id = sess.teacher_id
+     LEFT JOIN student_evaluations e ON e.session_id = sess.id
+     WHERE p.user_id = $1 ${studentFilter}
+     ORDER BY sess.session_date ASC`,
+    params
+  )
+  return rows
+}
+
 async function createEvaluation({
   teacherUserId,
   studentId,
   courseId,
+  sessionId,
   points,
   teacherComment,
   progressAppreciation,
@@ -400,29 +530,40 @@ async function createEvaluation({
 }) {
   const { rows } = await pool.query(
     `INSERT INTO student_evaluations
-       (student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation, criteria)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, student_id, course_id, teacher_id, points, teacher_comment, progress_appreciation, criteria, created_at`,
+       (student_id, course_id, teacher_id, session_id, points, teacher_comment, progress_appreciation, criteria)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+     RETURNING id, student_id, course_id, teacher_id, session_id, points, teacher_comment, progress_appreciation, criteria, created_at`,
     [
       studentId,
       courseId || null,
       teacherUserId,
+      sessionId || null,
       points ?? null,
       teacherComment || null,
       progressAppreciation || null,
       criteria || {},
     ]
   )
+  if (sessionId) {
+    await pool.query(
+      `UPDATE sessions
+       SET status = 'completed', updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND teacher_id = $2`,
+      [sessionId, teacherUserId]
+    )
+  }
   return rows[0]
 }
 
 async function listEvaluationsForTeacher(teacherUserId) {
   const { rows } = await pool.query(
-    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
-            s.first_name, s.last_name, c.name AS course_name
+    `SELECT e.id, e.student_id, e.course_id, e.session_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
+            s.first_name, s.last_name, c.name AS course_name,
+            sess.session_date, sess.objectives AS session_objectives, sess.status AS session_status
      FROM student_evaluations e
      JOIN students s ON s.id = e.student_id
      LEFT JOIN courses c ON c.id = e.course_id
+     LEFT JOIN sessions sess ON sess.id = e.session_id
      WHERE e.teacher_id = $1
      ORDER BY e.created_at DESC
      LIMIT 200`,
@@ -433,11 +574,13 @@ async function listEvaluationsForTeacher(teacherUserId) {
 
 async function listEvaluationsForStudent(studentId) {
   const { rows } = await pool.query(
-    `SELECT e.id, e.student_id, e.course_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
-            u.full_name AS teacher_name, c.name AS course_name
+    `SELECT e.id, e.student_id, e.course_id, e.session_id, e.points, e.teacher_comment, e.progress_appreciation, e.criteria, e.created_at,
+            u.full_name AS teacher_name, c.name AS course_name,
+            sess.session_date, sess.objectives AS session_objectives, sess.status AS session_status
      FROM student_evaluations e
      LEFT JOIN course_users u ON u.id = e.teacher_id
      LEFT JOIN courses c ON c.id = e.course_id
+     LEFT JOIN sessions sess ON sess.id = e.session_id
      WHERE e.student_id = $1
      ORDER BY e.created_at DESC`,
     [studentId]
@@ -848,6 +991,37 @@ async function listAllUsers() {
   return rows
 }
 
+async function listTeacherSummaries() {
+  const { rows } = await pool.query(
+    `SELECT u.id, u.full_name, u.email, u.created_at,
+            COUNT(DISTINCT tc.course_id)::int AS course_count,
+            COUNT(DISTINCT sc.student_id)::int AS student_count,
+            COUNT(DISTINCT e.id)::int AS evaluation_count,
+            COUNT(DISTINCT r.id)::int AS report_count,
+            MAX(e.created_at) AS last_evaluation_at
+     FROM course_users u
+     LEFT JOIN teacher_courses tc ON tc.teacher_id = u.id
+     LEFT JOIN student_courses sc ON sc.course_id = tc.course_id
+     LEFT JOIN student_evaluations e ON e.teacher_id = u.id
+     LEFT JOIN generated_reports r ON r.created_by = u.id
+     WHERE u.role = 'teacher'
+     GROUP BY u.id, u.full_name, u.email, u.created_at
+     ORDER BY u.full_name ASC`
+  )
+  return rows
+}
+
+async function findTeacherUserById(userId) {
+  const { rows } = await pool.query(
+    `SELECT id, full_name, email, created_at
+     FROM course_users
+     WHERE id = $1 AND role = 'teacher'
+     LIMIT 1`,
+    [userId]
+  )
+  return rows[0] || null
+}
+
 async function updateUserRole(userId, role) {
   const { rows } = await pool.query(
     `UPDATE course_users SET role = $2 WHERE id = $1
@@ -1065,12 +1239,20 @@ module.exports = {
   listCoursesForTeacher,
   listStudentsForTeacher,
   isTeacherForStudent,
+  createSession,
+  findSessionForTeacher,
+  updateSessionForTeacher,
+  listSessionsForTeacher,
+  listSessionsForTeacherStudent,
+  listSessionsForParentUser,
   createEvaluation,
   listEvaluationsForTeacher,
   listEvaluationsForStudent,
   createGeneratedReport,
   findReportById,
   listReportsForTeacher,
+  listTeacherSummaries,
+  findTeacherUserById,
   getOrCreateIndividualInbox,
   getSharedInboxId,
   reportBelongsToUser,

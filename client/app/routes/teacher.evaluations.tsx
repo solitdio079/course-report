@@ -22,6 +22,9 @@ type Evaluation = {
   first_name: string;
   last_name: string;
   course_name: string | null;
+  session_date: string | null;
+  session_objectives: string | null;
+  session_status: string | null;
 };
 
 export default function TeacherEvaluations() {
@@ -87,6 +90,12 @@ export default function TeacherEvaluations() {
                       <div className="text-sm text-base-content/70">
                         {new Date(e.created_at).toLocaleString()}
                       </div>
+                      {e.session_date && (
+                        <div className="mt-2 rounded-lg border border-[#ffd8ad] bg-[#fff9f0] px-3 py-2 text-sm text-base-content/70">
+                          Session: {new Date(e.session_date).toLocaleString()}
+                          {e.session_objectives ? ` - ${e.session_objectives}` : ""}
+                        </div>
+                      )}
                       {e.points != null && (
                         <div className="mt-1">
                           <StarRating value={Number(e.points)} readOnly />

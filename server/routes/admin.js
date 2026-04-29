@@ -87,16 +87,45 @@ router.get("/reports", async (req, res, next) => {
   }
 })
 
+router.get("/teachers", async (req, res, next) => {
+  try {
+    res.json({ teachers: await queries.listTeacherSummaries() })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get("/teachers/:id/dashboard", async (req, res, next) => {
+  try {
+    const teacherId = Number(req.params.id)
+    const teacher = await queries.findTeacherUserById(teacherId)
+    if (!teacher) return res.status(404).json({ message: "Teacher not found" })
+
+    const [courses, students, evaluations, reports] = await Promise.all([
+      queries.listCoursesForTeacher(teacherId),
+      queries.listStudentsForTeacher(teacherId),
+      queries.listEvaluationsForTeacher(teacherId),
+      queries.listReportsForTeacher(teacherId),
+    ])
+
+    res.json({ teacher, courses, students, evaluations, reports })
+  } catch (err) {
+    next(err)
+  }
+})
+
 router.get("/overview", async (req, res, next) => {
   try {
-    const [users, payments, expenses, reports] = await Promise.all([
+    const [users, teachers, payments, expenses, reports] = await Promise.all([
       queries.listAllUsers(),
+      queries.listTeacherSummaries(),
       queries.paymentSummary(),
       queries.expenseSummary(),
       queries.listAllReports(),
     ])
     res.json({
       userCount: users.length,
+      teacherCount: teachers.length,
       payments,
       expenses,
       reportCount: reports.length,
