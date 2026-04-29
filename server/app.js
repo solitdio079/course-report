@@ -18,15 +18,28 @@ const adminRoutes = require("./routes/admin")
 const { ensureSchema } = require("./db/ensureSchema")
 
 const app = express()
+const isProduction = process.env.NODE_ENV === "production"
+const allowedOrigins = (
+  process.env.CLIENT_ORIGINS ||
+  process.env.CLIENT_ORIGIN ||
+  "https://helloacademy.co,https://www.helloacademy.co,http://localhost:5173,http://127.0.0.1:5173"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean)
 
 configurePassport()
+
+if (isProduction) {
+  app.set("trust proxy", 1)
+}
 
 app.use(express.json())
 
 app.use((req, res, next) => {
   const origin = req.headers.origin
 
-  if (origin) {
+  if (origin && allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin)
     res.header("Vary", "Origin")
   }
@@ -52,8 +65,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: "lax",
-      secure: false,
+      sameSite: isProduction ? "none" : "lax",
+      secure: isProduction,
     },
   })
 )

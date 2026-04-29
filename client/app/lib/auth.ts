@@ -1,5 +1,8 @@
 export const API_URL =
-  (import.meta.env.VITE_API_URL as string) || "http://localhost:3000";
+  (import.meta.env.VITE_API_URL as string) ||
+  (import.meta.env.PROD
+    ? "https://api.helloacademy.co"
+    : "http://localhost:3000");
 
 export type Role =
   | "admin"
