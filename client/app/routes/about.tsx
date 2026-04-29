@@ -15,7 +15,7 @@ export default function About() {
   const { t } = useTranslation();
   return (
     <main className="min-h-screen">
-      <section className="relative overflow-hidden bg-[#eff9ff]">
+      <section className="relative overflow-hidden bg-[#fff8ef]">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-24 grid gap-10 md:grid-cols-2 items-center">
           <div>
             <span className="badge badge-primary badge-outline mb-3">
@@ -35,24 +35,24 @@ export default function About() {
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-[#cfe2ff] bg-white p-5 shadow-sm">
-              <div className="creative-icon bg-[#246bfe]">Cl</div>
+            <div className="rounded-lg border border-[#ffd8ad] bg-white p-5 shadow-sm">
+              <div className="creative-icon bg-[#f8760f] text-[#2b1708]">Cl</div>
               <h2 className="mt-4 text-xl font-bold">{t("about.mission.b1.bold")}</h2>
-              <p className="mt-2 text-sm font-medium text-[#536273]">
+              <p className="mt-2 text-sm font-medium text-[#6d5a4a]">
                 {t("about.mission.b1.text")}
               </p>
             </div>
             <div className="rounded-lg border border-[#b8eee6] bg-white p-5 shadow-sm">
-              <div className="creative-icon bg-[#0f9f8f]">Tr</div>
+              <div className="creative-icon bg-[#00a88f] text-white">Tr</div>
               <h2 className="mt-4 text-xl font-bold">{t("about.mission.b2.bold")}</h2>
-              <p className="mt-2 text-sm font-medium text-[#536273]">
+              <p className="mt-2 text-sm font-medium text-[#6d5a4a]">
                 {t("about.mission.b2.text")}
               </p>
             </div>
             <div className="rounded-lg border border-[#ffd5ce] bg-white p-5 shadow-sm sm:col-span-2">
-              <div className="creative-icon bg-[#f45d48]">In</div>
+              <div className="creative-icon bg-[#ff6b57] text-[#2b1708]">In</div>
               <h2 className="mt-4 text-xl font-bold">{t("about.mission.b3.bold")}</h2>
-              <p className="mt-2 text-sm font-medium text-[#536273]">
+              <p className="mt-2 text-sm font-medium text-[#6d5a4a]">
                 {t("about.mission.b3.text")}
               </p>
             </div>
@@ -142,10 +142,10 @@ export default function About() {
         </div>
       </section>
 
-      <section className="bg-[#dff5f1] text-[#102033]">
+      <section className="bg-[#fff0dd] text-[#2b1708]">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
           <h2 className="text-3xl font-semibold">{t("about.cta2.title")}</h2>
-          <p className="mt-3 font-medium text-[#24384f]">{t("about.cta2.subtitle")}</p>
+          <p className="mt-3 font-medium text-[#6d5a4a]">{t("about.cta2.subtitle")}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link className="btn btn-primary btn-lg" to="/contact">
               {t("about.cta2.contact")}

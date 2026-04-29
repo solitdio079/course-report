@@ -70,11 +70,15 @@ export function Navbar() {
               className="flex items-center gap-2 text-base-content no-underline"
               to="/"
             >
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#0f9f8f] text-sm font-black text-white">
-                CR
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#fff0dd] p-1 ring-1 ring-[#f8760f]/25">
+                <img
+                  src="/hello-logo.png"
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
               </span>
-              <span className="text-lg font-black tracking-tight text-[#102033]">
-                Course Report
+              <span className="text-lg font-black tracking-tight text-[#2b1708]">
+                Hello Academy
               </span>
             </Link>
             <div className="flex items-center gap-2 md:hidden">
@@ -151,7 +155,7 @@ export function Navbar() {
 
             </ul>
 
-            <div className="grid gap-2 border-t border-[#d8e0ea] pt-3 md:hidden">
+            <div className="grid gap-2 border-t border-[#ffd8ad] pt-3 md:hidden">
               {user ? (
                 <>
                   <Link className="btn btn-outline btn-sm rounded-lg" to="/profile">

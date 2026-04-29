@@ -33,7 +33,7 @@ export default function Contact() {
 
   return (
     <main className="min-h-screen">
-      <section className="relative overflow-hidden bg-[#fff8e6]">
+      <section className="relative overflow-hidden bg-[#fff8ef]">
         <div className="mx-auto max-w-6xl px-4 py-16 md:py-20 grid gap-10 md:grid-cols-2 items-center">
           <div>
             <span className="badge badge-primary badge-outline mb-3">
@@ -46,16 +46,16 @@ export default function Contact() {
           </div>
           <div className="grid gap-4">
             <div className="rounded-lg border border-[#ffe2aa] bg-white p-5 shadow-sm">
-              <div className="text-sm font-bold uppercase tracking-wide text-[#c46a00]">
+              <div className="text-sm font-bold uppercase tracking-wide text-[#a34400]">
                 {t("contact.info.email")}
               </div>
-              <a className="mt-2 block text-2xl font-black text-[#102033]" href="mailto:hello@coursereport.app">
+              <a className="mt-2 block text-2xl font-black text-[#2b1708]" href="mailto:hello@coursereport.app">
                 hello@coursereport.app
               </a>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="rounded-lg border border-[#b8eee6] bg-white p-5 shadow-sm">
-                <div className="text-sm font-bold uppercase tracking-wide text-[#075f56]">
+                <div className="text-sm font-bold uppercase tracking-wide text-[#007c68]">
                   {t("contact.info.phone")}
                 </div>
                 <a className="mt-2 block text-lg font-bold" href="tel:+905550000000">
@@ -63,7 +63,7 @@ export default function Contact() {
                 </a>
               </div>
               <div className="rounded-lg border border-[#cfe2ff] bg-white p-5 shadow-sm">
-                <div className="text-sm font-bold uppercase tracking-wide text-[#246bfe]">
+                <div className="text-sm font-bold uppercase tracking-wide text-[#1d5ed8]">
                   {t("contact.info.hours")}
                 </div>
                 <div className="mt-2 text-lg font-bold">
@@ -169,10 +169,10 @@ export default function Contact() {
         </div>
       </section>
 
-      <section className="bg-[#dff5f1] text-[#102033]">
+      <section className="bg-[#fff0dd] text-[#2b1708]">
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
           <h2 className="text-3xl font-semibold">{t("contact.cta.title")}</h2>
-          <p className="mt-3 font-medium text-[#24384f]">{t("contact.cta.subtitle")}</p>
+          <p className="mt-3 font-medium text-[#6d5a4a]">{t("contact.cta.subtitle")}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link className="btn btn-primary btn-lg" to="/sign-up">
               {t("about.cta.parent")}

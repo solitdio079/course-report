@@ -8,17 +8,19 @@
 
 :root {
   color-scheme: light;
-  --cr-ink: #102033;
-  --cr-muted: #536273;
+  --cr-ink: #2b1708;
+  --cr-muted: #6d5a4a;
   --cr-surface: #ffffff;
-  --cr-soft: #f4f7fb;
-  --cr-line: #d8e0ea;
-  --cr-navy: #102033;
-  --cr-blue: #246bfe;
-  --cr-teal: #0f9f8f;
-  --cr-coral: #f45d48;
-  --cr-gold: #ffcb45;
-  --cr-purple: #6d5dfc;
+  --cr-soft: #fff8ef;
+  --cr-line: #ffd8ad;
+  --cr-orange: #f8760f;
+  --cr-orange-dark: #a34400;
+  --cr-apricot: #ffe7c7;
+  --cr-sun: #ffd25a;
+  --cr-blue: #2478ff;
+  --cr-teal: #00a88f;
+  --cr-coral: #ff6b57;
+  --cr-purple: #7857ff;
 }
 
 html {
@@ -36,16 +38,17 @@ body {
     sans-serif;
   color: var(--cr-ink);
   background:
-    linear-gradient(180deg, #ffffff 0, var(--cr-soft) 360px),
+    radial-gradient(circle at 12% 0%, #fff0d9 0, transparent 32%),
+    linear-gradient(180deg, #ffffff 0, var(--cr-soft) 380px),
     var(--cr-soft);
 }
 
 .navbar {
   border-radius: 0;
-  border-bottom: 1px solid rgb(16 32 51 / 0.12);
-  background: rgb(255 255 255 / 0.94);
+  border-bottom: 1px solid rgb(248 118 15 / 0.22);
+  background: rgb(255 255 255 / 0.96);
   backdrop-filter: blur(18px);
-  box-shadow: 0 8px 24px rgb(16 32 51 / 0.07);
+  box-shadow: 0 8px 26px rgb(248 118 15 / 0.12);
 }
 
 .navbar .menu a {
@@ -55,14 +58,14 @@ body {
 }
 
 .navbar .menu a:hover {
-  background: #e7f5f2;
-  color: #075f56;
+  background: #fff0dd;
+  color: var(--cr-orange-dark);
 }
 
 .navbar .menu a.active,
 .navbar .menu a[aria-current="page"] {
-  background: #dff5f1;
-  color: #075f56;
+  background: #ffe0b8;
+  color: #7d3300;
 }
 
 .navbar .btn-ghost {
@@ -70,15 +73,15 @@ body {
 }
 
 .navbar .btn-ghost:hover {
-  background: #e7f5f2;
-  color: #075f56;
+  background: #fff0dd;
+  color: var(--cr-orange-dark);
 }
 
 .card {
-  border: 1px solid rgb(16 32 51 / 0.1);
+  border: 1px solid rgb(248 118 15 / 0.16);
   border-radius: 8px;
   background: rgb(255 255 255 / 0.98);
-  box-shadow: 0 18px 40px rgb(16 32 51 / 0.08);
+  box-shadow: 0 18px 40px rgb(248 118 15 / 0.1);
 }
 
 .card-body {
@@ -88,7 +91,7 @@ body {
 .input,
 .select,
 .textarea {
-  border-color: rgb(16 32 51 / 0.16);
+  border-color: rgb(248 118 15 / 0.26);
   border-radius: 8px;
   background-color: #ffffff;
 }
@@ -96,19 +99,20 @@ body {
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--cr-teal);
-  outline-color: rgb(15 159 143 / 0.22);
+  border-color: var(--cr-orange);
+  outline-color: rgb(248 118 15 / 0.24);
 }
 
 .btn-primary {
-  border-color: var(--cr-teal);
-  background: var(--cr-teal);
-  color: #ffffff;
+  border-color: var(--cr-orange);
+  background: var(--cr-orange);
+  color: #2b1708;
 }
 
 .btn-primary:hover {
-  border-color: #0b8276;
-  background: #0b8276;
+  border-color: #ff8b2d;
+  background: #ff8b2d;
+  color: #2b1708;
 }
 
 .btn-outline {
@@ -117,26 +121,26 @@ body {
 }
 
 .btn-outline:hover {
-  border-color: var(--cr-teal);
-  background: #e7f5f2;
-  color: #075f56;
+  border-color: var(--cr-orange);
+  background: #fff0dd;
+  color: var(--cr-orange-dark);
 }
 
 .badge-primary {
-  border-color: var(--cr-blue);
-  background: var(--cr-blue);
-  color: #ffffff;
+  border-color: var(--cr-orange);
+  background: #ffe0b8;
+  color: #7d3300;
 }
 
 .badge-ghost,
 .badge-outline {
-  border-color: rgb(16 32 51 / 0.28);
-  background: #f7fafc;
+  border-color: rgb(248 118 15 / 0.32);
+  background: #fff9f0;
   color: var(--cr-ink);
 }
 
 .link {
-  color: #075f56;
+  color: var(--cr-orange-dark);
 }
 
 .label-text,
@@ -167,43 +171,43 @@ td {
 
 .bg-base-200,
 .bg-base-200\/60 {
-  background-color: #eaf0f7;
+  background-color: #fff0dd;
 }
 
 .bg-base-300 {
-  background-color: #dce8f5;
+  background-color: #ffd8ad;
 }
 
 .bg-base-content,
 .bg-neutral,
 .bg-neutral-content {
-  background-color: #e7f5f2;
+  background-color: #fff0dd;
   color: var(--cr-ink);
 }
 
 .bg-primary {
-  background-color: var(--cr-teal);
+  background-color: var(--cr-orange);
 }
 
 .text-primary,
 .text-secondary {
-  color: #075f56;
+  color: var(--cr-orange-dark);
 }
 
 .text-primary-content {
-  color: #ffffff;
+  color: #2b1708;
 }
 
 .bg-primary .text-primary-content,
 .bg-primary.text-primary-content {
-  color: #ffffff;
+  color: #2b1708;
 }
 
 .creative-tile {
   border-radius: 8px;
-  border: 1px solid rgb(16 32 51 / 0.1);
+  border: 1px solid rgb(248 118 15 / 0.18);
   background: #ffffff;
-  box-shadow: 0 12px 28px rgb(16 32 51 / 0.08);
+  box-shadow: 0 12px 28px rgb(248 118 15 / 0.1);
 }
 
 .creative-icon {

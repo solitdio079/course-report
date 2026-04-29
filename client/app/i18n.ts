@@ -114,15 +114,15 @@ const en = {
   "home.bottomCta.signUp": "Create parent account",
 
   // SEO
-  "meta.home.title": "Course Report — Manage students, courses and reports",
+  "meta.home.title": "Hello Academy — Manage students, courses and reports",
   "meta.home.description":
-    "Course Report is a complete platform for schools and tutors to manage students, courses, evaluations, payments, and parent communication.",
-  "meta.about.title": "About — Course Report",
+    "Hello Academy is a complete platform for schools and tutors to manage students, courses, evaluations, payments, and parent communication.",
+  "meta.about.title": "About — Hello Academy",
   "meta.about.description":
-    "Course Report helps schools and tutors manage students, courses and parent communication in one platform.",
-  "meta.contact.title": "Contact — Course Report",
+    "Hello Academy helps schools and tutors manage students, courses and parent communication in one platform.",
+  "meta.contact.title": "Contact — Hello Academy",
   "meta.contact.description":
-    "Get in touch with the Course Report team. Send a message, find our address, or reach us by email or phone.",
+    "Get in touch with the Hello Academy team. Send a message, find our address, or reach us by email or phone.",
 
   // Footer
   "footer.tagline":
@@ -139,12 +139,12 @@ const en = {
   "about.badge": "About us",
   "about.heroTitle": "Built for the people who teach, support and raise students.",
   "about.heroText":
-    "Course Report started with a simple question: why does it take so many tools, spreadsheets and chat threads to do something as important as letting parents know how their child is doing? We brought it all into one calm, focused platform.",
+    "Hello Academy started with a simple question: why does it take so many tools, spreadsheets and chat threads to do something as important as letting parents know how their child is doing? We brought it all into one calm, focused platform.",
   "about.cta.parent": "Create parent account",
   "about.cta.contact": "Contact us",
   "about.mission.title": "Our mission",
   "about.mission.text":
-    "We believe great education depends on great communication. Course Report helps schools and tutors run the operational side of teaching — evaluations, payments, parent updates — so educators can focus on what actually matters: the students in front of them.",
+    "We believe great education depends on great communication. Hello Academy helps schools and tutors run the operational side of teaching — evaluations, payments, parent updates — so educators can focus on what actually matters: the students in front of them.",
   "about.mission.b1.bold": "Clarity",
   "about.mission.b1.text":
     "every role sees a focused dashboard, not a maze of menus.",
@@ -520,15 +520,15 @@ const tr = {
 
   // SEO
   "meta.home.title":
-    "Course Report — Öğrencileri, dersleri ve raporları yönetin",
+    "Hello Academy — Öğrencileri, dersleri ve raporları yönetin",
   "meta.home.description":
-    "Course Report; okullar ve özel ders verenler için öğrencileri, dersleri, değerlendirmeleri, ödemeleri ve veli iletişimini yönetmek için eksiksiz bir platformdur.",
-  "meta.about.title": "Hakkımızda — Course Report",
+    "Hello Academy; okullar ve özel ders verenler için öğrencileri, dersleri, değerlendirmeleri, ödemeleri ve veli iletişimini yönetmek için eksiksiz bir platformdur.",
+  "meta.about.title": "Hakkımızda — Hello Academy",
   "meta.about.description":
-    "Course Report, okulların ve eğitmenlerin öğrencileri, dersleri ve veli iletişimini tek platformda yönetmesine yardımcı olur.",
-  "meta.contact.title": "İletişim — Course Report",
+    "Hello Academy, okulların ve eğitmenlerin öğrencileri, dersleri ve veli iletişimini tek platformda yönetmesine yardımcı olur.",
+  "meta.contact.title": "İletişim — Hello Academy",
   "meta.contact.description":
-    "Course Report ekibiyle iletişime geçin. Mesaj gönderin, adresimizi bulun ya da e-posta veya telefonla bize ulaşın.",
+    "Hello Academy ekibiyle iletişime geçin. Mesaj gönderin, adresimizi bulun ya da e-posta veya telefonla bize ulaşın.",
 
   // Footer
   "footer.tagline":
@@ -545,12 +545,12 @@ const tr = {
   "about.badge": "Hakkımızda",
   "about.heroTitle": "Öğreten, destekleyen ve büyüten herkes için yapıldı.",
   "about.heroText":
-    "Course Report basit bir soruyla başladı: Bir çocuğun nasıl gittiğini ailesine anlatmak gibi önemli bir iş için neden bu kadar çok araç, tablo ve sohbet gerekiyor? Hepsini sakin ve odaklı tek bir platformda topladık.",
+    "Hello Academy basit bir soruyla başladı: Bir çocuğun nasıl gittiğini ailesine anlatmak gibi önemli bir iş için neden bu kadar çok araç, tablo ve sohbet gerekiyor? Hepsini sakin ve odaklı tek bir platformda topladık.",
   "about.cta.parent": "Veli hesabı oluştur",
   "about.cta.contact": "Bize ulaşın",
   "about.mission.title": "Misyonumuz",
   "about.mission.text":
-    "İyi bir eğitimin iyi bir iletişimden geçtiğine inanıyoruz. Course Report; okullara ve eğitmenlere değerlendirme, ödeme ve veli iletişimi gibi operasyonel işleri kolaylaştırır — eğitimciler asıl önemli olana, öğrencilerine odaklansın diye.",
+    "İyi bir eğitimin iyi bir iletişimden geçtiğine inanıyoruz. Hello Academy; okullara ve eğitmenlere değerlendirme, ödeme ve veli iletişimi gibi operasyonel işleri kolaylaştırır — eğitimciler asıl önemli olana, öğrencilerine odaklansın diye.",
   "about.mission.b1.bold": "Berraklık",
   "about.mission.b1.text":
     "her rol kendi odaklı panosunu görür, menü labirenti yok.",

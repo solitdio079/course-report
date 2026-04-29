@@ -76,9 +76,9 @@ function StatTile({
   note?: string;
 }) {
   return (
-    <div className="rounded-lg border border-[#b8eee6] bg-[#ecfffb] p-4 shadow-sm">
-      <div className="text-sm font-bold text-[#075f56]">{label}</div>
-      <div className="mt-2 text-3xl font-black text-[#102033]">{value}</div>
+    <div className="rounded-lg border border-[#ffd8ad] bg-white p-4 shadow-sm shadow-[#f8760f]/10">
+      <div className="text-sm font-bold text-[#a34400]">{label}</div>
+      <div className="mt-2 text-3xl font-black text-[#2b1708]">{value}</div>
       {note && <div className="mt-1 text-xs text-base-content/60">{note}</div>}
     </div>
   );
@@ -178,32 +178,36 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7fbff] text-base-content">
+    <div className="min-h-screen bg-[#fff8ef] text-base-content">
       <div className="grid min-h-screen lg:grid-cols-[240px_1fr]">
-        <aside className="border-r border-[#102033]/10 bg-white px-4 py-6 text-[#102033] lg:min-h-screen">
+        <aside className="border-r border-[#f8760f]/20 bg-white px-4 py-6 text-[#2b1708] lg:min-h-screen">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-lg bg-[#0f9f8f] font-semibold text-white">
-              CR
+            <div className="grid h-12 w-12 place-items-center rounded-lg bg-[#fff0dd] p-1 ring-1 ring-[#f8760f]/25">
+              <img
+                src="/hello-logo.png"
+                alt=""
+                className="h-full w-full object-contain"
+              />
             </div>
             <div>
-              <div className="font-semibold">Course Report</div>
-              <div className="text-xs font-medium text-[#536273]">
+              <div className="font-semibold">Hello Academy</div>
+              <div className="text-xs font-medium text-[#6d5a4a]">
                 {t("nav.teacherDashboard")}
               </div>
             </div>
           </div>
 
           <nav className="mt-8 grid gap-2 text-sm">
-            <Link className="rounded-lg bg-[#dff5f1] px-3 py-3 font-bold text-[#075f56]" to="/teacher">
+            <Link className="rounded-lg bg-[#ffe0b8] px-3 py-3 font-bold text-[#7d3300]" to="/teacher">
               {t("teacher.title")}
             </Link>
-            <Link className="rounded-lg px-3 py-3 font-bold text-[#102033] hover:bg-[#e7f5f2]" to="/teacher/evaluations">
+            <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/teacher/evaluations">
               {t("teacher.evaluations")}
             </Link>
-            <Link className="rounded-lg px-3 py-3 font-bold text-[#102033] hover:bg-[#e7f5f2]" to="/teacher/evaluations/new">
+            <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/teacher/evaluations/new">
               {t("teacher.newEvaluation")}
             </Link>
-            <Link className="rounded-lg px-3 py-3 font-bold text-[#102033] hover:bg-[#e7f5f2]" to="/inbox">
+            <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/inbox">
               {t("nav.inbox")}
             </Link>
           </nav>
@@ -220,7 +224,7 @@ export default function TeacherDashboard() {
           <div className="mx-auto max-w-7xl">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs font-bold uppercase tracking-wide text-[#167c70]">
+                <div className="text-xs font-bold uppercase tracking-wide text-[#a34400]">
                   {t("nav.teacherPortal")}
                 </div>
                 <h1 className="mt-1 text-3xl font-semibold">{t("teacher.title")}</h1>
@@ -255,7 +259,7 @@ export default function TeacherDashboard() {
             </div>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.75fr]">
-              <section className="rounded-lg border border-[#b8d8ff] bg-[#f3f8ff] p-4 shadow-sm">
+              <section className="rounded-lg border border-[#ffd8ad] bg-[#fff4e5] p-4 shadow-sm shadow-[#f8760f]/10">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h2 className="text-lg font-semibold">{t("teacher.students")}</h2>
@@ -283,7 +287,7 @@ export default function TeacherDashboard() {
                         <Link
                           key={student.id}
                           to={`/teacher/students/${student.id}`}
-                          className="rounded-lg border border-[#cfe2ff] bg-white p-4 transition hover:border-[#246bfe] hover:bg-[#eef6ff]"
+                          className="rounded-lg border border-[#ffd8ad] bg-white p-4 transition hover:border-[#f8760f] hover:bg-[#fff9f0]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div>
@@ -311,7 +315,7 @@ export default function TeacherDashboard() {
                 )}
               </section>
 
-              <section className="rounded-lg border border-[#ffe2aa] bg-[#fff8e6] p-4 shadow-sm">
+              <section className="rounded-lg border border-[#ffd25a] bg-[#fff9d9] p-4 shadow-sm shadow-[#f8760f]/10">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Attention</h2>
                   <span className="badge badge-outline">{attentionItems.length}</span>
@@ -327,7 +331,7 @@ export default function TeacherDashboard() {
                 ) : (
                   <ul className="mt-4 space-y-3">
                     {attentionItems.map((evaluation) => (
-                      <li key={evaluation.id} className="rounded-lg border border-[#ffe2aa] bg-white p-3">
+                      <li key={evaluation.id} className="rounded-lg border border-[#ffd25a] bg-white p-3">
                         <Link
                           to={`/teacher/students/${evaluation.student_id}`}
                           className="font-medium hover:underline"
@@ -351,7 +355,7 @@ export default function TeacherDashboard() {
             </div>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.9fr]">
-              <section className="rounded-lg border border-[#d9cffc] bg-[#f7f4ff] p-4 shadow-sm">
+              <section className="rounded-lg border border-[#c9ddff] bg-[#f3f8ff] p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Recent evaluations</h2>
                   <Link className="btn btn-ghost btn-xs" to="/teacher/evaluations">
@@ -393,7 +397,7 @@ export default function TeacherDashboard() {
                 )}
               </section>
 
-              <section className="rounded-lg border border-[#ffcfc7] bg-[#fff4f1] p-4 shadow-sm">
+              <section className="rounded-lg border border-[#ffcfc7] bg-[#fff4f1] p-4 shadow-sm shadow-[#ff6b57]/10">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Reports</h2>
                   <span className="badge badge-ghost">{reports.length}</span>
