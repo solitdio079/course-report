@@ -15,6 +15,10 @@ import flyonuiScriptUrl from "flyonui/flyonui.js?url";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import i18n, { SUPPORTED_LANGUAGES } from "./i18n";
+import {
+  applyFrenchDomTranslations,
+  observeFrenchDomTranslations,
+} from "./lib/domFrench";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -63,6 +67,7 @@ export default function App() {
         i18n.changeLanguage(saved);
       }
       document.documentElement.lang = i18n.language || "en";
+      applyFrenchDomTranslations(i18n.language || "en");
     } catch {
       // ignore
     }
@@ -79,6 +84,20 @@ export default function App() {
       }
     });
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const apply = (language: string) => {
+      document.documentElement.lang = language || "en";
+      requestAnimationFrame(() => applyFrenchDomTranslations(language || "en"));
+    };
+    const stopObserver = observeFrenchDomTranslations(() => i18n.language || "en");
+    i18n.on("languageChanged", apply);
+    return () => {
+      stopObserver();
+      i18n.off("languageChanged", apply);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fff8ef]">

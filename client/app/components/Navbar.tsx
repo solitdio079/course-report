@@ -153,12 +153,12 @@ export function Navbar() {
             <div className="grid gap-2 border-t border-[#ffd8ad] pt-3 md:hidden">
               {user ? (
                 <>
-                  <Link className="btn btn-outline btn-sm rounded-lg" to="/profile">
+                  <Link className="btn btn-sm rounded-lg border-[#f8760f] bg-white text-[#2b1708] hover:bg-[#fff0dd] hover:text-[#2b1708]" to="/profile">
                     {t("nav.profile")}
                   </Link>
                   <button
                     type="button"
-                    className="btn btn-outline btn-sm rounded-lg"
+                    className="btn btn-sm rounded-lg border-[#2b1708] bg-[#2b1708] text-white hover:bg-[#4a2a12] hover:text-white"
                     onClick={logout}
                   >
                     {t("nav.signOut")}
@@ -166,10 +166,10 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link className="btn btn-outline btn-sm rounded-lg" to="/sign-in">
+                  <Link className="btn btn-sm rounded-lg border-[#2b1708] bg-white text-[#2b1708] hover:bg-[#fff0dd] hover:text-[#2b1708]" to="/sign-in">
                     {t("nav.signIn")}
                   </Link>
-                  <Link className="btn btn-primary btn-sm rounded-lg" to="/sign-up">
+                  <Link className="btn btn-sm rounded-lg border-[#f8760f] bg-[#f8760f] text-white hover:bg-[#d95f00] hover:text-white" to="/sign-up">
                     {t("nav.signUp")}
                   </Link>
                 </>
@@ -180,12 +180,12 @@ export function Navbar() {
               <LanguageSwitcher />
               {user ? (
                 <>
-                  <Link className="btn btn-ghost btn-sm rounded-lg" to="/profile">
+                  <Link className="btn btn-sm rounded-lg border-[#f8760f] bg-white text-[#2b1708] hover:bg-[#fff0dd] hover:text-[#2b1708]" to="/profile">
                     {t("nav.profile")}
                   </Link>
                   <button
                     type="button"
-                    className="btn btn-outline btn-sm rounded-lg"
+                    className="btn btn-sm rounded-lg border-[#2b1708] bg-[#2b1708] text-white hover:bg-[#4a2a12] hover:text-white"
                     onClick={logout}
                   >
                     {t("nav.signOut")}
@@ -193,10 +193,10 @@ export function Navbar() {
                 </>
               ) : (
                 <>
-                  <Link className="btn btn-ghost btn-sm rounded-lg" to="/sign-in">
+                  <Link className="btn btn-sm rounded-lg border-[#2b1708] bg-white text-[#2b1708] hover:bg-[#fff0dd] hover:text-[#2b1708]" to="/sign-in">
                     {t("nav.signIn")}
                   </Link>
-                  <Link className="btn btn-primary btn-sm rounded-lg" to="/sign-up">
+                  <Link className="btn btn-sm rounded-lg border-[#f8760f] bg-[#f8760f] text-white hover:bg-[#d95f00] hover:text-white" to="/sign-up">
                     {t("nav.signUp")}
                   </Link>
                 </>
