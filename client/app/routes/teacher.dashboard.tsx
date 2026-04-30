@@ -208,12 +208,6 @@ export default function TeacherDashboard() {
               alt="Hello Academy"
               className="h-12 w-28 object-contain object-right"
             />
-            <div>
-              <div className="font-semibold">Hello Academy</div>
-              <div className="text-xs font-medium text-[#6d5a4a]">
-                {t("nav.teacherDashboard")}
-              </div>
-            </div>
           </div>
 
           <nav className="mt-8 grid gap-2 text-sm">
@@ -228,6 +222,9 @@ export default function TeacherDashboard() {
             </Link>
             <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/teacher/sessions">
               Sessions
+            </Link>
+            <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/teacher/feedback">
+              Parent feedback
             </Link>
             <Link className="rounded-lg px-3 py-3 font-bold text-[#2b1708] hover:bg-[#fff0dd]" to="/inbox">
               {t("nav.inbox")}

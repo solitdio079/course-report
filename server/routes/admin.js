@@ -101,14 +101,16 @@ router.get("/teachers/:id/dashboard", async (req, res, next) => {
     const teacher = await queries.findTeacherUserById(teacherId)
     if (!teacher) return res.status(404).json({ message: "Teacher not found" })
 
-    const [courses, students, evaluations, reports] = await Promise.all([
+    const [courses, students, evaluations, reports, sessions, feedback] = await Promise.all([
       queries.listCoursesForTeacher(teacherId),
       queries.listStudentsForTeacher(teacherId),
       queries.listEvaluationsForTeacher(teacherId),
       queries.listReportsForTeacher(teacherId),
+      queries.listSessionsForTeacher(teacherId),
+      queries.listFeedbackForTeacher(teacherId),
     ])
 
-    res.json({ teacher, courses, students, evaluations, reports })
+    res.json({ teacher, courses, students, evaluations, reports, sessions, feedback })
   } catch (err) {
     next(err)
   }

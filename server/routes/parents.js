@@ -58,14 +58,15 @@ router.get("/children/:id", async (req, res, next) => {
     const child = await queries.findChildForParent(id, req.user.id)
     if (!child) return res.status(404).json({ message: "Not found" })
 
-    const [parents, courses, teachers, sessions] = await Promise.all([
+    const [parents, courses, teachers, sessions, feedback] = await Promise.all([
       queries.listParentsForStudent(id),
       queries.listCoursesForStudent(id),
       queries.listTeachersForStudent(id),
       queries.listSessionsForParentUser(req.user.id, id),
+      queries.listFeedbackForParentUser(req.user.id, id),
     ])
 
-    res.json({ child, parents, courses, teachers, sessions })
+    res.json({ child, parents, courses, teachers, sessions, feedback })
   } catch (err) {
     next(err)
   }
@@ -131,6 +132,15 @@ router.get("/sessions", async (req, res, next) => {
   try {
     const sessions = await queries.listSessionsForParentUser(req.user.id)
     res.json({ sessions })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.get("/feedback", async (req, res, next) => {
+  try {
+    const feedback = await queries.listFeedbackForParentUser(req.user.id)
+    res.json({ feedback })
   } catch (err) {
     next(err)
   }

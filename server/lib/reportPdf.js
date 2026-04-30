@@ -84,6 +84,7 @@ function buildReportPdf({ report, evaluations, stream, language = "en" }) {
   const reportEvaluations = monthlyEvaluations(evaluations, report)
 
   if (!isSocial) {
+    drawReportDraftBlocks(doc, report, labels)
     drawSectionTitle(doc, labels.monthlyOverview, labels.monthlyOverviewSub)
     drawMonthlySummary(doc, reportEvaluations, labels)
   }
@@ -138,6 +139,20 @@ const PDF_LABELS = {
     noCourseComment: "No course comment recorded.",
     teacherComment: "Teacher comment",
     progressNote: "Progress note",
+    reportSummary: "Teacher monthly summary",
+    strengths: "Strengths",
+    improvements: "Areas to improve",
+    recommendations: "Recommendations",
+    session: "Session",
+    objectives: "Objectives",
+    sessionSummary: "Session summary",
+    difficulties: "Difficulties",
+    mistakes: "Mistakes noticed",
+    homework: "Homework",
+    recording: "Recording",
+    sessionSkills: "Session skills",
+    moodCheck: "MoodCheck",
+    criteriaLabel: "Evaluation criteria",
     by: "by",
     criteria: {
       vocabulary: "Vocabulary",
@@ -180,6 +195,20 @@ const PDF_LABELS = {
     noCourseComment: "Ders yorumu kaydedilmedi.",
     teacherComment: "Öğretmen yorumu",
     progressNote: "Gelişim notu",
+    reportSummary: "Öğretmenin aylık özeti",
+    strengths: "Güçlü yönler",
+    improvements: "Geliştirilecek alanlar",
+    recommendations: "Öneriler",
+    session: "Ders oturumu",
+    objectives: "Hedefler",
+    sessionSummary: "Oturum özeti",
+    difficulties: "Zorlanılan noktalar",
+    mistakes: "Fark edilen hatalar",
+    homework: "Ödev",
+    recording: "Kayıt",
+    sessionSkills: "Oturum becerileri",
+    moodCheck: "MoodCheck",
+    criteriaLabel: "Değerlendirme kriterleri",
     by: "hazırlayan",
     criteria: {
       vocabulary: "Kelime bilgisi",
@@ -244,10 +273,65 @@ function formatCriteria(criteria, labels) {
     .filter(Boolean)
 }
 
+function compactText(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null
+}
+
+function formatSessionSkills(skills, labels) {
+  if (!skills) return []
+  if (Array.isArray(skills)) {
+    return skills
+      .map((skill) => {
+        if (!skill || typeof skill !== "object") return null
+        const label = compactText(skill.label) || compactText(skill.name) || compactText(skill.key)
+        const score = Number(skill.score)
+        if (!label || !Number.isFinite(score)) return null
+        return `${label}: ${Math.max(1, Math.min(5, Math.round(score)))}/5`
+      })
+      .filter(Boolean)
+  }
+  if (typeof skills === "object") {
+    return Object.entries(skills)
+      .map(([key, value]) => {
+        const score = Number(value)
+        return Number.isFinite(score)
+          ? `${key}: ${Math.max(1, Math.min(5, Math.round(score)))}/5`
+          : null
+      })
+      .filter(Boolean)
+  }
+  return []
+}
+
+function formatMoodCheck(moodCheck) {
+  if (!moodCheck) return null
+  if (typeof moodCheck === "string") return compactText(moodCheck)
+  if (typeof moodCheck !== "object" || Array.isArray(moodCheck)) return null
+  return Object.entries(moodCheck)
+    .map(([key, value]) => {
+      if (value == null || value === "") return null
+      return `${key}: ${value}`
+    })
+    .filter(Boolean)
+    .join("   |   ")
+}
+
+function evaluationOverviewTexts(evaluation) {
+  return [
+    evaluation.session_summary,
+    evaluation.teacher_comment,
+    evaluation.session_difficulties,
+    evaluation.session_mistakes,
+    evaluation.session_homework,
+    evaluation.progress_appreciation,
+  ].filter((comment) => typeof comment === "string" && comment.trim())
+}
+
 function monthlyEvaluations(evaluations, report) {
   const source = evaluations || []
+  const monthSource = report.report_month || report.created_at
   const inMonth = source.filter((evaluation) =>
-    sameMonth(evaluation.created_at, report.created_at)
+    sameMonth(evaluation.session_date || evaluation.created_at, monthSource)
   )
   return inMonth.length > 0 ? inMonth : source
 }
@@ -274,11 +358,7 @@ function drawMonthlySummary(doc, evaluations, labels) {
   const width = right - left
   const ratings = numericRatings(evaluations)
   const comments = (evaluations || [])
-    .flatMap((evaluation) => [
-      evaluation.teacher_comment,
-      evaluation.progress_appreciation,
-    ])
-    .filter((comment) => typeof comment === "string" && comment.trim())
+    .flatMap((evaluation) => evaluationOverviewTexts(evaluation))
     .slice(0, 3)
   const summaryTop = doc.y
   const summaryHeight = Math.max(122, 82 + comments.length * 17)
@@ -326,6 +406,38 @@ function drawMonthlySummary(doc, evaluations, labels) {
   })
   doc.y = Math.max(doc.y + 20, summaryTop + summaryHeight + 20)
   doc.x = left
+}
+
+function drawReportDraftBlocks(doc, report, labels) {
+  const blocks = [
+    [labels.reportSummary, report.summary],
+    [labels.strengths, report.strengths],
+    [labels.improvements, report.improvements],
+    [labels.recommendations, report.recommendations],
+  ].filter(([, value]) => compactText(value))
+
+  if (blocks.length === 0) return
+  drawSectionTitle(doc, labels.report, labels.teacherNotes)
+  const { left, right } = pageBounds(doc)
+  const width = right - left
+
+  blocks.forEach(([title, value]) => {
+    const text = compactText(value)
+    const height = Math.max(64, 48 + Math.ceil(text.length / 95) * 12)
+    ensureSpace(doc, height + 10)
+    const top = doc.y
+    doc.roundedRect(left, top, width, height, 10).fill("#fff7ed")
+    doc
+      .fontSize(10)
+      .fillColor("#9a3412")
+      .text(title, left + 16, top + 13, { width: width - 32 })
+    doc
+      .fontSize(10)
+      .fillColor("#334155")
+      .text(text, left + 16, doc.y + 5, { width: width - 32 })
+    doc.y = top + height + 10
+    doc.x = left
+  })
 }
 
 function formatRating(points) {
@@ -377,12 +489,56 @@ function drawEvaluationCard(doc, evaluation, labels, language) {
   const { left, right } = pageBounds(doc)
   const width = right - left
   const criteriaLines = formatCriteria(evaluation.criteria, labels)
-  const comment = evaluation.teacher_comment || labels.noCourseComment
-  const progress = evaluation.progress_appreciation
-  const cardHeight = Math.max(
-    120,
-    92 + Math.ceil(criteriaLines.join("   ").length / 90) * 15
-  )
+  const skillLines = formatSessionSkills(evaluation.session_skills, labels)
+  const moodCheck = formatMoodCheck(evaluation.session_mood_check)
+  const timeRange =
+    evaluation.session_start_time || evaluation.session_end_time
+      ? [evaluation.session_start_time, evaluation.session_end_time].filter(Boolean).join(" - ")
+      : null
+  const sessionMeta = [
+    evaluation.session_title,
+    evaluation.session_date ? formatDateTime(evaluation.session_date, language) : null,
+    timeRange,
+    evaluation.course_name,
+  ]
+    .map(compactText)
+    .filter(Boolean)
+    .join("  •  ")
+  const detailBlocks = [
+    sessionMeta ? [labels.session, sessionMeta] : null,
+    compactText(evaluation.session_objectives)
+      ? [labels.objectives, compactText(evaluation.session_objectives)]
+      : null,
+    compactText(evaluation.session_summary)
+      ? [labels.sessionSummary, compactText(evaluation.session_summary)]
+      : null,
+    compactText(evaluation.teacher_comment)
+      ? [labels.teacherComment, compactText(evaluation.teacher_comment)]
+      : null,
+    compactText(evaluation.session_difficulties)
+      ? [labels.difficulties, compactText(evaluation.session_difficulties)]
+      : null,
+    compactText(evaluation.session_mistakes)
+      ? [labels.mistakes, compactText(evaluation.session_mistakes)]
+      : null,
+    compactText(evaluation.session_homework) || compactText(evaluation.progress_appreciation)
+      ? [
+          labels.homework,
+          [evaluation.session_homework, evaluation.progress_appreciation]
+            .map(compactText)
+            .filter(Boolean)
+            .join(" "),
+        ]
+      : null,
+    compactText(evaluation.session_recording)
+      ? [labels.recording, compactText(evaluation.session_recording)]
+      : null,
+    skillLines.length > 0 ? [labels.sessionSkills, skillLines.join("   |   ")] : null,
+    moodCheck ? [labels.moodCheck, moodCheck] : null,
+    criteriaLines.length > 0 ? [labels.criteriaLabel || "Criteria", criteriaLines.join("   |   ")] : null,
+  ].filter(Boolean)
+  const estimatedText = detailBlocks.map(([, text]) => text).join(" ")
+  const cardHeight = Math.max(142, 82 + detailBlocks.length * 24 + Math.ceil(estimatedText.length / 95) * 10)
 
   ensureSpace(doc, cardHeight + 18)
   const top = doc.y
@@ -392,7 +548,7 @@ function drawEvaluationCard(doc, evaluation, labels, language) {
 
   const meta = [
     formatDateTime(evaluation.created_at, language),
-    evaluation.course_name || null,
+    evaluation.session_id ? labels.session : evaluation.course_name || null,
     evaluation.teacher_name ? `${labels.by} ${evaluation.teacher_name}` : null,
   ]
     .filter(Boolean)
@@ -407,30 +563,26 @@ function drawEvaluationCard(doc, evaluation, labels, language) {
     drawRatingPill(doc, right - 100, top + 12, formatRating(evaluation.points))
   }
 
-  doc
-    .fontSize(12)
-    .fillColor("#0f172a")
-    .text(labels.teacherComment, left + 18, top + 40, { width: width - 36 })
-  doc
-    .fontSize(10)
-    .fillColor("#334155")
-    .text(comment, left + 18, top + 58, { width: width - 36 })
-
-  let y = doc.y + 8
-  if (progress) {
+  let y = top + 46
+  if (detailBlocks.length === 0) {
     doc
       .fontSize(10)
-      .fillColor("#0f766e")
-      .text(`${labels.progressNote}: ${progress}`, left + 18, y, { width: width - 36 })
+      .fillColor("#334155")
+      .text(labels.noCourseComment, left + 18, y, { width: width - 36 })
     y = doc.y + 8
   }
 
-  if (criteriaLines.length > 0) {
+  detailBlocks.forEach(([label, text]) => {
     doc
-      .fontSize(8.5)
-      .fillColor("#475569")
-      .text(criteriaLines.join("   |   "), left + 18, y, { width: width - 36 })
-  }
+      .fontSize(9)
+      .fillColor("#0f766e")
+      .text(label, left + 18, y, { width: width - 36 })
+    doc
+      .fontSize(9.5)
+      .fillColor("#334155")
+      .text(text, left + 18, doc.y + 2, { width: width - 36 })
+    y = doc.y + 8
+  })
 
   doc.y = top + cardHeight + 14
   doc.x = left

@@ -18,8 +18,49 @@ async function ensureSchema() {
   `)
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS parent_feedback (
+      id BIGSERIAL PRIMARY KEY,
+      student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      teacher_id BIGINT REFERENCES course_users(id) ON DELETE SET NULL,
+      feedback_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      author VARCHAR(255),
+      satisfaction VARCHAR(50),
+      progress TEXT,
+      difficulties TEXT,
+      comment TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `)
+
+  await pool.query(`
     ALTER TABLE student_evaluations
       ADD COLUMN IF NOT EXISTS criteria JSONB NOT NULL DEFAULT '{}'::jsonb
+  `)
+
+  await pool.query(`
+    ALTER TABLE sessions
+      ADD COLUMN IF NOT EXISTS title VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS start_time TIME,
+      ADD COLUMN IF NOT EXISTS end_time TIME,
+      ADD COLUMN IF NOT EXISTS score NUMERIC(5,2),
+      ADD COLUMN IF NOT EXISTS skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS mood_check JSONB NOT NULL DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS summary TEXT,
+      ADD COLUMN IF NOT EXISTS difficulties TEXT,
+      ADD COLUMN IF NOT EXISTS mistakes TEXT,
+      ADD COLUMN IF NOT EXISTS homework TEXT,
+      ADD COLUMN IF NOT EXISTS recording TEXT
+  `)
+
+  await pool.query(`
+    ALTER TABLE generated_reports
+      ADD COLUMN IF NOT EXISTS report_month DATE,
+      ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'draft',
+      ADD COLUMN IF NOT EXISTS summary TEXT,
+      ADD COLUMN IF NOT EXISTS strengths TEXT,
+      ADD COLUMN IF NOT EXISTS improvements TEXT,
+      ADD COLUMN IF NOT EXISTS recommendations TEXT
   `)
 
   await pool.query(`

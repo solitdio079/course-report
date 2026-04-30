@@ -29,6 +29,16 @@ type TeacherSummary = {
   last_evaluation_at: string | null;
 };
 
+type User = {
+  id: number;
+  full_name: string;
+  email: string;
+  role: UserRole;
+  created_at: string;
+};
+
+type UserRole = "admin" | "teacher" | "social_relations" | "accountant" | "parent";
+
 const paymentColors = {
   paid: "border-[#24a148] bg-[#defbe6] text-[#0e5f2c]",
   pending: "border-[#f2a900] bg-[#fff5cc] text-[#6f4d00]",
@@ -36,13 +46,30 @@ const paymentColors = {
   cancelled: "border-[#8d8d8d] bg-[#f4f4f4] text-[#393939]",
 } as const;
 
+const ROLES: UserRole[] = ["admin", "teacher", "accountant", "social_relations", "parent"];
+
+const roleStyles: Record<UserRole, string> = {
+  admin: "border-[#7857ff] bg-[#f7f4ff] text-[#3f278f]",
+  teacher: "border-[#f8760f] bg-[#fff0dd] text-[#7d3300]",
+  accountant: "border-[#2478ff] bg-[#eef6ff] text-[#174ea6]",
+  social_relations: "border-[#00a88f] bg-[#e8fff9] text-[#007c68]",
+  parent: "border-[#ff6b57] bg-[#fff4f1] text-[#8f2518]",
+};
+
+function roleLabel(role: UserRole) {
+  return role.replace("_", " ");
+}
+
 export default function AdminDashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [teachers, setTeachers] = useState<TeacherSummary[]>([]);
-  const [search, setSearch] = useState("");
+  const [users, setUsers] = useState<User[]>([]);
+  const [teacherSearch, setTeacherSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -52,9 +79,10 @@ export default function AdminDashboard() {
       if (!me) return navigate("/sign-in");
       if (me.role !== "admin") return navigate("/");
 
-      const [overviewRes, teachersRes] = await Promise.all([
+      const [overviewRes, teachersRes, usersRes] = await Promise.all([
         fetch(`${API_URL}/admin/overview`, { credentials: "include" }),
         fetch(`${API_URL}/admin/teachers`, { credentials: "include" }),
+        fetch(`${API_URL}/admin/users`, { credentials: "include" }),
       ]);
       if (cancelled) return;
       if (overviewRes.ok) setOverview(await overviewRes.json());
@@ -62,6 +90,7 @@ export default function AdminDashboard() {
         const data = await teachersRes.json();
         setTeachers(data?.teachers || []);
       }
+      if (usersRes.ok) setUsers((await usersRes.json()).users || []);
       setLoading(false);
     })();
     return () => {
@@ -70,12 +99,50 @@ export default function AdminDashboard() {
   }, [navigate]);
 
   const filteredTeachers = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = teacherSearch.trim().toLowerCase();
     if (!term) return teachers;
     return teachers.filter((teacher) =>
       `${teacher.full_name} ${teacher.email}`.toLowerCase().includes(term)
     );
-  }, [search, teachers]);
+  }, [teacherSearch, teachers]);
+
+  const roleCounts = useMemo(() => {
+    return ROLES.reduce(
+      (counts, role) => ({
+        ...counts,
+        [role]: users.filter((user) => user.role === role).length,
+      }),
+      {} as Record<UserRole, number>
+    );
+  }, [users]);
+
+  const filteredUsers = useMemo(() => {
+    const term = userSearch.trim().toLowerCase();
+    return users.filter((user) => {
+      const roleMatches = roleFilter === "all" || user.role === roleFilter;
+      const textMatches =
+        !term ||
+        `${user.full_name} ${user.email} ${user.role}`.toLowerCase().includes(term);
+      return roleMatches && textMatches;
+    });
+  }, [roleFilter, userSearch, users]);
+
+  async function setRole(id: number, role: UserRole) {
+    await fetch(`${API_URL}/admin/users/${id}/role`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ role }),
+    });
+    const [usersRes, teachersRes, overviewRes] = await Promise.all([
+      fetch(`${API_URL}/admin/users`, { credentials: "include" }),
+      fetch(`${API_URL}/admin/teachers`, { credentials: "include" }),
+      fetch(`${API_URL}/admin/overview`, { credentials: "include" }),
+    ]);
+    if (usersRes.ok) setUsers((await usersRes.json()).users || []);
+    if (teachersRes.ok) setTeachers((await teachersRes.json()).teachers || []);
+    if (overviewRes.ok) setOverview(await overviewRes.json());
+  }
 
   if (loading || !overview) {
     return (
@@ -140,8 +207,8 @@ export default function AdminDashboard() {
               </div>
               <input
                 className="input input-bordered input-sm w-full sm:w-72"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                value={teacherSearch}
+                onChange={(event) => setTeacherSearch(event.target.value)}
                 placeholder="Search teachers..."
               />
             </div>
@@ -180,6 +247,9 @@ export default function AdminDashboard() {
                         ? new Date(teacher.last_evaluation_at).toLocaleDateString()
                         : "None yet"}
                     </div>
+                    <div className="mt-3 inline-flex rounded-lg bg-[#f8760f] px-3 py-2 text-xs font-black text-[#2b1708]">
+                      View teacher dashboard
+                    </div>
                   </Link>
                 ))}
               </div>
@@ -214,6 +284,118 @@ export default function AdminDashboard() {
             </div>
           </section>
         </div>
+
+        <section className="mt-5 rounded-lg border border-[#ffd8ad] bg-white p-4 shadow-sm shadow-[#f8760f]/10">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-[#2b1708]">Managed users</h2>
+              <p className="text-sm font-medium text-[#6d5a4a]">
+                Filter users by role and manage access from the admin panel.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                className="input input-bordered input-sm w-full sm:w-64"
+                value={userSearch}
+                onChange={(event) => setUserSearch(event.target.value)}
+                placeholder="Search users..."
+              />
+              <select
+                className="select select-bordered select-sm w-full sm:w-48"
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value as UserRole | "all")}
+              >
+                <option value="all">All roles</option>
+                {ROLES.map((role) => (
+                  <option key={role} value={role}>
+                    {roleLabel(role)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className={`rounded-lg border px-3 py-2 text-sm font-bold ${
+                roleFilter === "all"
+                  ? "border-[#f8760f] bg-[#ffe0b8] text-[#7d3300]"
+                  : "border-[#ffd8ad] bg-[#fff9f0] text-[#6d5a4a]"
+              }`}
+              onClick={() => setRoleFilter("all")}
+            >
+              All {users.length}
+            </button>
+            {ROLES.map((role) => (
+              <button
+                key={role}
+                type="button"
+                className={`rounded-lg border px-3 py-2 text-sm font-bold capitalize ${
+                  roleFilter === role ? roleStyles[role] : "border-[#ffd8ad] bg-[#fff9f0] text-[#6d5a4a]"
+                }`}
+                onClick={() => setRoleFilter(role)}
+              >
+                {roleLabel(role)} {roleCounts[role] || 0}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Created</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td className="font-medium text-[#2b1708]">{user.full_name}</td>
+                    <td className="text-sm text-base-content/70">{user.email}</td>
+                    <td>
+                      <select
+                        className={`select select-bordered select-xs font-bold capitalize ${roleStyles[user.role]}`}
+                        value={user.role}
+                        onChange={(event) => setRole(user.id, event.target.value as UserRole)}
+                      >
+                        {ROLES.map((role) => (
+                          <option key={role} value={role}>
+                            {roleLabel(role)}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="text-sm text-base-content/70">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="text-right">
+                      {user.role === "teacher" ? (
+                        <Link className="btn btn-primary btn-xs" to={`/admin/teachers/${user.id}`}>
+                          Dashboard
+                        </Link>
+                      ) : user.role === "accountant" ? (
+                        <Link className="btn btn-outline btn-xs bg-white" to="/accountant">
+                          Accounting
+                        </Link>
+                      ) : user.role === "social_relations" ? (
+                        <Link className="btn btn-outline btn-xs bg-white" to="/social">
+                          Social
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-base-content/50">Managed</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         <section className="mt-5 rounded-lg border border-[#ffcfc7] bg-[#fff4f1] p-4 shadow-sm shadow-[#ff6b57]/10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -32,6 +32,7 @@ type Evaluation = {
   id: number;
   student_id: number;
   course_id: number | null;
+  session_id: number | null;
   points: string | null;
   teacher_comment: string | null;
   progress_appreciation: string | null;
@@ -40,6 +41,30 @@ type Evaluation = {
   first_name: string;
   last_name: string;
   course_name: string | null;
+  session_date: string | null;
+  session_title: string | null;
+  session_objectives: string | null;
+  session_summary: string | null;
+};
+
+type Session = {
+  id: number;
+  student_id: number;
+  course_id: number | null;
+  session_date: string;
+  title: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  objectives: string | null;
+  status: "planned" | "completed" | "cancelled";
+  score: string | null;
+  summary: string | null;
+  homework: string | null;
+  first_name: string;
+  last_name: string;
+  course_name: string | null;
+  evaluation_id: number | null;
+  evaluation_points: string | null;
 };
 
 type Report = {
@@ -49,6 +74,19 @@ type Report = {
   includes_charts: boolean;
   created_at: string;
   student_id: number;
+  first_name: string;
+  last_name: string;
+};
+
+type ParentFeedback = {
+  id: number;
+  student_id: number;
+  feedback_date: string;
+  author: string | null;
+  satisfaction: string | null;
+  progress: string | null;
+  difficulties: string | null;
+  comment: string | null;
   first_name: string;
   last_name: string;
 };
@@ -84,6 +122,8 @@ export default function AdminTeacherDashboard() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [feedback, setFeedback] = useState<ParentFeedback[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -105,6 +145,8 @@ export default function AdminTeacherDashboard() {
       setStudents(data.students || []);
       setEvaluations(data.evaluations || []);
       setReports(data.reports || []);
+      setSessions(data.sessions || []);
+      setFeedback(data.feedback || []);
       setLoading(false);
     })();
     return () => {
@@ -131,17 +173,14 @@ export default function AdminTeacherDashboard() {
   });
 
   const recentEvaluations = evaluations.slice(0, 4);
+  const upcomingSessions = sessions
+    .filter((session) => new Date(session.session_date).getTime() >= Date.now())
+    .slice(0, 5);
   const reportsThisMonth = reports.filter((report) => monthMatches(report.created_at));
   const evaluationsThisMonth = evaluations.filter((evaluation) =>
     monthMatches(evaluation.created_at)
   );
-  const rated = evaluations
-    .map((evaluation) => ratingValue(evaluation.points))
-    .filter((value): value is number => value != null);
-  const averageRating =
-    rated.length > 0
-      ? (rated.reduce((sum, value) => sum + value, 0) / rated.length).toFixed(1)
-      : "-";
+  const sessionsThisMonth = sessions.filter((session) => monthMatches(session.session_date));
   const attentionItems = evaluations
     .filter((evaluation) => {
       const rating = ratingValue(evaluation.points);
@@ -229,11 +268,15 @@ export default function AdminTeacherDashboard() {
                 note={`${evaluations.length} total`}
               />
               <StatTile
+                label="Sessions planned"
+                value={sessions.length}
+                note={`${sessionsThisMonth.length} this month`}
+              />
+              <StatTile
                 label="Reports generated"
                 value={reports.length}
                 note={`${reportsThisMonth.length} this month`}
               />
-              <StatTile label="Average rating" value={averageRating} note="1-5 star scale" />
             </div>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.75fr]">
@@ -333,6 +376,62 @@ export default function AdminTeacherDashboard() {
             </div>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.9fr]">
+              <section className="rounded-lg border border-[#ffd8ad] bg-[#fff8ef] p-4 shadow-sm shadow-[#f8760f]/10">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">Sessions</h2>
+                  <span className="badge badge-ghost">{sessions.length}</span>
+                </div>
+                <p className="mt-1 text-sm font-medium text-[#6d5a4a]">
+                  The admin can review the same planned and completed sessions as the teacher.
+                </p>
+
+                {sessions.length === 0 ? (
+                  <p className="mt-4 text-sm text-base-content/60">No sessions planned yet.</p>
+                ) : (
+                  <ul className="mt-3 divide-y divide-base-300">
+                    {(upcomingSessions.length > 0 ? upcomingSessions : sessions.slice(0, 5)).map(
+                      (session) => (
+                        <li key={session.id} className="py-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium">
+                                {session.title || `${session.first_name} ${session.last_name}`}
+                              </div>
+                              <div className="text-xs text-base-content/60">
+                                {session.first_name} {session.last_name} ·{" "}
+                                {new Date(session.session_date).toLocaleString()}
+                                {session.start_time || session.end_time
+                                  ? ` · ${[session.start_time, session.end_time].filter(Boolean).join(" - ")}`
+                                  : ""}
+                                {session.course_name ? ` · ${session.course_name}` : ""}
+                              </div>
+                            </div>
+                            <span className="badge badge-outline capitalize">{session.status}</span>
+                          </div>
+                          {session.objectives && (
+                            <p className="mt-2 rounded-lg bg-white p-2 text-sm text-base-content/75">
+                              {session.objectives}
+                            </p>
+                          )}
+                          {session.evaluation_id && (
+                            <div className="mt-2 rounded-lg bg-success/10 p-2 text-sm text-success">
+                              <div className="flex items-center gap-2 font-semibold">
+                                Evaluation attached
+                                {session.evaluation_points && (
+                                  <StarRating value={Number(session.evaluation_points)} readOnly />
+                                )}
+                              </div>
+                              {session.summary && <p className="mt-1">{session.summary}</p>}
+                              {session.homework && <p className="mt-1">Homework: {session.homework}</p>}
+                            </div>
+                          )}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                )}
+              </section>
+
               <section className="rounded-lg border border-[#c9ddff] bg-[#f3f8ff] p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold">Recent evaluations</h2>
@@ -367,6 +466,24 @@ export default function AdminTeacherDashboard() {
                             {evaluation.teacher_comment}
                           </p>
                         )}
+                        {evaluation.session_id && (
+                          <div className="mt-2 rounded-lg bg-white p-2 text-sm text-base-content/70">
+                            <div className="font-semibold text-[#2b1708]">
+                              {evaluation.session_title || "Session document"}
+                            </div>
+                            {evaluation.session_date && (
+                              <div className="text-xs">
+                                {new Date(evaluation.session_date).toLocaleString()}
+                              </div>
+                            )}
+                            {evaluation.session_objectives && (
+                              <p className="mt-1">{evaluation.session_objectives}</p>
+                            )}
+                            {evaluation.session_summary && (
+                              <p className="mt-1 font-medium">{evaluation.session_summary}</p>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -392,6 +509,33 @@ export default function AdminTeacherDashboard() {
                           {report.first_name} {report.last_name} ·{" "}
                           {new Date(report.created_at).toLocaleDateString()}
                         </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className="rounded-lg border border-[#ffd25a] bg-[#fff9d9] p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold">Parent feedback</h2>
+                  <span className="badge badge-ghost">{feedback.length}</span>
+                </div>
+                {feedback.length === 0 ? (
+                  <p className="mt-4 text-sm text-base-content/60">No parent feedback logged yet.</p>
+                ) : (
+                  <ul className="mt-3 space-y-3">
+                    {feedback.slice(0, 4).map((item) => (
+                      <li key={item.id} className="rounded-lg border border-[#ffd25a] bg-white p-3 text-sm">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="font-semibold">
+                            {item.first_name} {item.last_name}
+                          </div>
+                          {item.satisfaction && <span className="badge badge-outline">{item.satisfaction}</span>}
+                        </div>
+                        <div className="mt-1 text-xs text-base-content/60">
+                          {item.author || "Parent"} · {new Date(item.feedback_date).toLocaleDateString()}
+                        </div>
+                        {item.comment && <p className="mt-2">{item.comment}</p>}
                       </li>
                     ))}
                   </ul>

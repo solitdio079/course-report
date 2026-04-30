@@ -105,10 +105,21 @@ CREATE TABLE IF NOT EXISTS sessions (
   course_id BIGINT REFERENCES courses(id) ON DELETE SET NULL,
   teacher_id BIGINT NOT NULL REFERENCES course_users(id) ON DELETE CASCADE,
   session_date TIMESTAMPTZ NOT NULL,
+  title VARCHAR(255),
+  start_time TIME,
+  end_time TIME,
   objectives TEXT,
   status VARCHAR(30) NOT NULL DEFAULT 'planned'
     CHECK (status IN ('planned', 'completed', 'cancelled')),
   notes TEXT,
+  score NUMERIC(5,2),
+  skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+  mood_check JSONB NOT NULL DEFAULT '{}'::jsonb,
+  summary TEXT,
+  difficulties TEXT,
+  mistakes TEXT,
+  homework TEXT,
+  recording TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -121,7 +132,27 @@ CREATE TABLE IF NOT EXISTS generated_reports (
   report_type VARCHAR(100),
   file_url TEXT,
   includes_charts BOOLEAN DEFAULT FALSE,
+  report_month DATE,
+  status VARCHAR(50) DEFAULT 'draft',
+  summary TEXT,
+  strengths TEXT,
+  improvements TEXT,
+  recommendations TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS parent_feedback (
+  id BIGSERIAL PRIMARY KEY,
+  student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id BIGINT REFERENCES course_users(id) ON DELETE SET NULL,
+  feedback_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  author VARCHAR(255),
+  satisfaction VARCHAR(50),
+  progress TEXT,
+  difficulties TEXT,
+  comment TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS inboxes (
@@ -202,10 +233,29 @@ SELECT NULL, 'shared', 'Shared inbox'
 WHERE NOT EXISTS (SELECT 1 FROM inboxes WHERE type = 'shared');
 
 ALTER TABLE generated_reports
-  ADD COLUMN IF NOT EXISTS content TEXT;
+  ADD COLUMN IF NOT EXISTS content TEXT,
+  ADD COLUMN IF NOT EXISTS report_month DATE,
+  ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'draft',
+  ADD COLUMN IF NOT EXISTS summary TEXT,
+  ADD COLUMN IF NOT EXISTS strengths TEXT,
+  ADD COLUMN IF NOT EXISTS improvements TEXT,
+  ADD COLUMN IF NOT EXISTS recommendations TEXT;
 
 ALTER TABLE student_evaluations
   ADD COLUMN IF NOT EXISTS criteria JSONB NOT NULL DEFAULT '{}'::jsonb;
+
+ALTER TABLE sessions
+  ADD COLUMN IF NOT EXISTS title VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS start_time TIME,
+  ADD COLUMN IF NOT EXISTS end_time TIME,
+  ADD COLUMN IF NOT EXISTS score NUMERIC(5,2),
+  ADD COLUMN IF NOT EXISTS skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS mood_check JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS summary TEXT,
+  ADD COLUMN IF NOT EXISTS difficulties TEXT,
+  ADD COLUMN IF NOT EXISTS mistakes TEXT,
+  ADD COLUMN IF NOT EXISTS homework TEXT,
+  ADD COLUMN IF NOT EXISTS recording TEXT;
 
 ALTER TABLE student_evaluations
   ADD COLUMN IF NOT EXISTS session_id BIGINT REFERENCES sessions(id) ON DELETE SET NULL;

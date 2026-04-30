@@ -13,6 +13,7 @@ export default [
   route("teacher/sign-up", "routes/teacher.sign-up.tsx"),
   route("teacher", "routes/teacher.dashboard.tsx"),
   route("teacher/sessions", "routes/teacher.sessions.tsx"),
+  route("teacher/feedback", "routes/teacher.feedback.tsx"),
   route("teacher/students/:id", "routes/teacher.students.id.tsx"),
   route("teacher/evaluations", "routes/teacher.evaluations.tsx"),
   route("teacher/evaluations/new", "routes/teacher.evaluations.new.tsx"),

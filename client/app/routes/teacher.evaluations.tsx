@@ -23,8 +23,11 @@ type Evaluation = {
   last_name: string;
   course_name: string | null;
   session_date: string | null;
+  session_title: string | null;
   session_objectives: string | null;
   session_status: string | null;
+  session_summary: string | null;
+  session_homework: string | null;
 };
 
 export default function TeacherEvaluations() {
@@ -92,8 +95,17 @@ export default function TeacherEvaluations() {
                       </div>
                       {e.session_date && (
                         <div className="mt-2 rounded-lg border border-[#ffd8ad] bg-[#fff9f0] px-3 py-2 text-sm text-base-content/70">
-                          Session: {new Date(e.session_date).toLocaleString()}
+                          <div className="font-semibold text-[#2b1708]">
+                            {e.session_title || "Session document"}
+                          </div>
+                          <div>{new Date(e.session_date).toLocaleString()}</div>
                           {e.session_objectives ? ` - ${e.session_objectives}` : ""}
+                          {e.session_summary && (
+                            <p className="mt-1 font-medium">{e.session_summary}</p>
+                          )}
+                          {e.session_homework && (
+                            <p className="mt-1">Homework: {e.session_homework}</p>
+                          )}
                         </div>
                       )}
                       {e.points != null && (

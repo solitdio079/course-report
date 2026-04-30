@@ -17,6 +17,12 @@ type Report = {
   title: string;
   report_type: string | null;
   includes_charts: boolean;
+  report_month: string | null;
+  status: string | null;
+  summary: string | null;
+  strengths: string | null;
+  improvements: string | null;
+  recommendations: string | null;
   created_at: string;
   first_name: string;
   last_name: string;
@@ -26,12 +32,27 @@ type Report = {
 type Evaluation = {
   id: number;
   course_id: number | null;
+  session_id: number | null;
   points: string | null;
   teacher_comment: string | null;
   progress_appreciation: string | null;
   criteria: EvaluationCriteria | null;
   created_at: string;
   course_name: string | null;
+  session_date: string | null;
+  session_title: string | null;
+  session_start_time: string | null;
+  session_end_time: string | null;
+  session_objectives: string | null;
+  session_status: string | null;
+  session_score: string | null;
+  session_skills: unknown;
+  session_mood_check: unknown;
+  session_summary: string | null;
+  session_difficulties: string | null;
+  session_mistakes: string | null;
+  session_homework: string | null;
+  session_recording: string | null;
 };
 
 function PointsChart({ evaluations }: { evaluations: Evaluation[] }) {
@@ -86,8 +107,9 @@ function sameMonth(date: string, monthSource: string) {
 }
 
 function monthlyEvaluations(evaluations: Evaluation[], report: Report) {
+  const monthSource = report.report_month || report.created_at;
   const inMonth = evaluations.filter((evaluation) =>
-    sameMonth(evaluation.created_at, report.created_at)
+    sameMonth(evaluation.session_date || evaluation.created_at, monthSource)
   );
   return inMonth.length > 0 ? inMonth : evaluations;
 }
@@ -114,11 +136,66 @@ function ratingValue(points: string | number | null) {
 function commentOverview(evaluations: Evaluation[]) {
   return evaluations
     .flatMap((evaluation) => [
+      evaluation.session_summary,
       evaluation.teacher_comment,
+      evaluation.session_difficulties,
+      evaluation.session_mistakes,
+      evaluation.session_homework,
       evaluation.progress_appreciation,
     ])
     .filter((comment): comment is string => Boolean(comment?.trim()))
     .slice(0, 3);
+}
+
+function sessionSkillItems(skills: unknown) {
+  if (!skills) return [];
+  if (Array.isArray(skills)) {
+    return skills
+      .map((skill) => {
+        if (!skill || typeof skill !== "object") return null;
+        const item = skill as { label?: unknown; name?: unknown; key?: unknown; score?: unknown };
+        const label =
+          typeof item.label === "string"
+            ? item.label
+            : typeof item.name === "string"
+              ? item.name
+              : typeof item.key === "string"
+                ? item.key
+                : null;
+        const score = Number(item.score);
+        return label && Number.isFinite(score)
+          ? { label, score: Math.max(1, Math.min(5, Math.round(score))) }
+          : null;
+      })
+      .filter((item): item is { label: string; score: number } => Boolean(item));
+  }
+  if (typeof skills === "object") {
+    return Object.entries(skills as Record<string, unknown>)
+      .map(([label, value]) => {
+        const score = Number(value);
+        return Number.isFinite(score)
+          ? { label, score: Math.max(1, Math.min(5, Math.round(score))) }
+          : null;
+      })
+      .filter((item): item is { label: string; score: number } => Boolean(item));
+  }
+  return [];
+}
+
+function moodText(moodCheck: unknown) {
+  if (!moodCheck) return null;
+  if (typeof moodCheck === "string") return moodCheck.trim() || null;
+  if (typeof moodCheck !== "object" || Array.isArray(moodCheck)) return null;
+  const entries = Object.entries(moodCheck as Record<string, unknown>)
+    .filter(([, value]) => value != null && value !== "")
+    .map(([key, value]) => `${key}: ${String(value)}`);
+  return entries.length > 0 ? entries.join(" • ") : null;
+}
+
+function timeRange(evaluation: Evaluation) {
+  return [evaluation.session_start_time, evaluation.session_end_time]
+    .filter(Boolean)
+    .join(" - ");
 }
 
 export default function TeacherReportView() {
@@ -129,6 +206,16 @@ export default function TeacherReportView() {
   const [report, setReport] = useState<Report | null>(null);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draft, setDraft] = useState({
+    title: "",
+    reportMonth: "",
+    status: "draft",
+    summary: "",
+    strengths: "",
+    improvements: "",
+    recommendations: "",
+  });
 
   async function downloadPdf() {
     if (!report) return;
@@ -176,6 +263,15 @@ export default function TeacherReportView() {
       const data = await res.json();
       setReport(data.report);
       setEvaluations(data.evaluations || []);
+      setDraft({
+        title: data.report.title || "",
+        reportMonth: data.report.report_month ? data.report.report_month.slice(0, 7) : "",
+        status: data.report.status || "draft",
+        summary: data.report.summary || "",
+        strengths: data.report.strengths || "",
+        improvements: data.report.improvements || "",
+        recommendations: data.report.recommendations || "",
+      });
       setLoading(false);
     })();
     return () => {
@@ -194,6 +290,63 @@ export default function TeacherReportView() {
   const reportEvaluations = monthlyEvaluations(evaluations, report);
   const ratingSummary = averageRating(reportEvaluations);
   const comments = commentOverview(reportEvaluations);
+
+  async function saveDraft() {
+    if (!report) return;
+    setSavingDraft(true);
+    try {
+      const res = await fetch(`${API_URL}/teachers/reports/${report.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(draft),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data?.message || "Could not save report.");
+        return;
+      }
+      setReport((current) => (current ? { ...current, ...data.report } : current));
+    } finally {
+      setSavingDraft(false);
+    }
+  }
+
+  function exportText() {
+    if (!report) return;
+    const lines = [
+      `${draft.title || report.title}`,
+      `Student: ${report.first_name} ${report.last_name}`,
+      draft.reportMonth ? `Month: ${draft.reportMonth}` : "",
+      "",
+      "Monthly summary",
+      draft.summary || "-",
+      "",
+      "Strengths",
+      draft.strengths || "-",
+      "",
+      "Areas to improve",
+      draft.improvements || "-",
+      "",
+      "Recommendations",
+      draft.recommendations || "-",
+      "",
+      "Evaluation base",
+      ...reportEvaluations.map((evaluation) => {
+        const date = evaluation.session_date || evaluation.created_at;
+        return `${new Date(date).toLocaleDateString()} - ${evaluation.session_title || evaluation.course_name || "Session"} - ${evaluation.points || "-"} / 5`;
+      }),
+    ].filter((line) => line !== null);
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${report.first_name}_${report.last_name}_report_${report.id}.txt`.replace(/\s+/g, "_");
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 space-y-6 print:py-4">
@@ -219,6 +372,76 @@ export default function TeacherReportView() {
             Student: {report.first_name} {report.last_name}
             {report.author_name && ` • Author: ${report.author_name}`}
             {` • ${new Date(report.created_at).toLocaleString()}`}
+          </div>
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-xl print:shadow-none">
+        <div className="card-body">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="card-title">Report builder</h2>
+              <p className="text-sm text-base-content/60">
+                Edit the monthly summary blocks that appear in the PDF.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button className="btn btn-outline btn-sm bg-white" onClick={exportText}>
+                Export text
+              </button>
+              <button className="btn btn-primary btn-sm" onClick={saveDraft} disabled={savingDraft}>
+                <ButtonContent loading={savingDraft} loadingLabel="Saving...">
+                  Save draft
+                </ButtonContent>
+              </button>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <label className="form-control">
+              <span className="label-text">Title</span>
+              <input
+                className="input input-bordered"
+                value={draft.title}
+                onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+              />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Month</span>
+              <input
+                className="input input-bordered"
+                type="month"
+                value={draft.reportMonth}
+                onChange={(event) => setDraft((current) => ({ ...current, reportMonth: event.target.value }))}
+              />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Status</span>
+              <select
+                className="select select-bordered"
+                value={draft.status}
+                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+              >
+                <option value="draft">Draft</option>
+                <option value="ready">Ready</option>
+                <option value="sent">Sent</option>
+              </select>
+            </label>
+            <label className="form-control md:col-span-2">
+              <span className="label-text">Monthly summary</span>
+              <textarea className="textarea textarea-bordered min-h-28" value={draft.summary} onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))} />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Strengths</span>
+              <textarea className="textarea textarea-bordered min-h-28" value={draft.strengths} onChange={(event) => setDraft((current) => ({ ...current, strengths: event.target.value }))} />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Areas to improve</span>
+              <textarea className="textarea textarea-bordered min-h-28" value={draft.improvements} onChange={(event) => setDraft((current) => ({ ...current, improvements: event.target.value }))} />
+            </label>
+            <label className="form-control md:col-span-2">
+              <span className="label-text">Recommendations</span>
+              <textarea className="textarea textarea-bordered min-h-24" value={draft.recommendations} onChange={(event) => setDraft((current) => ({ ...current, recommendations: event.target.value }))} />
+            </label>
           </div>
         </div>
       </div>
@@ -271,6 +494,91 @@ export default function TeacherReportView() {
                     {new Date(e.created_at).toLocaleString()}
                     {e.course_name && ` • ${e.course_name}`}
                   </div>
+                  {e.session_id && (
+                    <div className="mt-3 rounded-lg border border-[#ffd8ad] bg-[#fff8ef] p-3 text-sm">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <div className="font-semibold text-[#2b1708]">
+                            {e.session_title || "Session document"}
+                          </div>
+                          <div className="text-xs font-medium text-[#6d5a4a]">
+                            {e.session_date
+                              ? new Date(e.session_date).toLocaleString()
+                              : "No session date"}
+                            {timeRange(e) ? ` • ${timeRange(e)}` : ""}
+                            {e.session_status ? ` • ${e.session_status}` : ""}
+                          </div>
+                        </div>
+                        {e.session_score != null && (
+                          <span className="badge badge-primary">
+                            {Number(e.session_score).toFixed(1)}/5
+                          </span>
+                        )}
+                      </div>
+                      {e.session_objectives && (
+                        <div className="mt-3">
+                          <div className="font-semibold">Objectives</div>
+                          <p className="mt-1 text-base-content/75">{e.session_objectives}</p>
+                        </div>
+                      )}
+                      {e.session_summary && (
+                        <div className="mt-3">
+                          <div className="font-semibold">Session summary</div>
+                          <p className="mt-1 text-base-content/75">{e.session_summary}</p>
+                        </div>
+                      )}
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        {e.session_difficulties && (
+                          <div className="rounded-md bg-white p-2">
+                            <div className="font-semibold">Difficulties</div>
+                            <p className="mt-1 text-base-content/70">{e.session_difficulties}</p>
+                          </div>
+                        )}
+                        {e.session_mistakes && (
+                          <div className="rounded-md bg-white p-2">
+                            <div className="font-semibold">Mistakes noticed</div>
+                            <p className="mt-1 text-base-content/70">{e.session_mistakes}</p>
+                          </div>
+                        )}
+                        {e.session_homework && (
+                          <div className="rounded-md bg-white p-2">
+                            <div className="font-semibold">Homework</div>
+                            <p className="mt-1 text-base-content/70">{e.session_homework}</p>
+                          </div>
+                        )}
+                        {moodText(e.session_mood_check) && (
+                          <div className="rounded-md bg-white p-2">
+                            <div className="font-semibold">MoodCheck</div>
+                            <p className="mt-1 text-base-content/70">
+                              {moodText(e.session_mood_check)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {sessionSkillItems(e.session_skills).length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {sessionSkillItems(e.session_skills).map((skill) => (
+                            <span
+                              key={`${skill.label}-${skill.score}`}
+                              className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#7d3300]"
+                            >
+                              {skill.label}: {skill.score}/5
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {e.session_recording && (
+                        <a
+                          className="link mt-3 inline-block text-sm font-semibold"
+                          href={e.session_recording}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open recording
+                        </a>
+                      )}
+                    </div>
+                  )}
                   {e.points != null && (
                     <div className="mt-1">
                       <StarRating value={Number(e.points)} readOnly />

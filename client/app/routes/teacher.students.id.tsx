@@ -40,21 +40,40 @@ type Evaluation = {
   teacher_name: string | null;
   course_name: string | null;
   session_date: string | null;
+  session_title: string | null;
   session_objectives: string | null;
   session_status: string | null;
+  session_summary: string | null;
+  session_homework: string | null;
 };
 type Session = {
   id: number;
   student_id: number;
   course_id: number | null;
   session_date: string;
+  title: string | null;
+  start_time: string | null;
+  end_time: string | null;
   objectives: string | null;
   status: "planned" | "completed" | "cancelled";
   notes: string | null;
+  score: string | null;
+  summary: string | null;
+  homework: string | null;
   course_name: string | null;
   evaluation_id: number | null;
   evaluation_points: string | null;
   evaluation_comment: string | null;
+};
+type ParentFeedback = {
+  id: number;
+  feedback_date: string;
+  author: string | null;
+  satisfaction: string | null;
+  progress: string | null;
+  difficulties: string | null;
+  comment: string | null;
+  teacher_name?: string | null;
 };
 
 export default function TeacherStudentDetail() {
@@ -66,12 +85,20 @@ export default function TeacherStudentDetail() {
   const [parents, setParents] = useState<ParentContact[]>([]);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [feedback, setFeedback] = useState<ParentFeedback[]>([]);
   const [includeCharts, setIncludeCharts] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionDate, setSessionDate] = useState("");
   const [objectives, setObjectives] = useState("");
   const [creatingSession, setCreatingSession] = useState(false);
+  const [feedbackDate, setFeedbackDate] = useState(new Date().toISOString().slice(0, 10));
+  const [feedbackAuthor, setFeedbackAuthor] = useState("");
+  const [feedbackSatisfaction, setFeedbackSatisfaction] = useState("High");
+  const [feedbackProgress, setFeedbackProgress] = useState("");
+  const [feedbackDifficulties, setFeedbackDifficulties] = useState("");
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [savingFeedback, setSavingFeedback] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +120,7 @@ export default function TeacherStudentDetail() {
       setEvaluations(data.evaluations || []);
       setParents(data.parents || []);
       setSessions(data.sessions || []);
+      setFeedback(data.feedback || []);
       setLoading(false);
     })();
     return () => {
@@ -131,6 +159,40 @@ export default function TeacherStudentDetail() {
       }
     } finally {
       setCreatingSession(false);
+    }
+  }
+
+  async function saveFeedback(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSavingFeedback(true);
+    try {
+      const res = await fetch(`${API_URL}/teachers/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          studentId: Number(id),
+          feedbackDate,
+          author: feedbackAuthor || undefined,
+          satisfaction: feedbackSatisfaction || undefined,
+          progress: feedbackProgress || undefined,
+          difficulties: feedbackDifficulties || undefined,
+          comment: feedbackComment || undefined,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.errors?.[0]?.msg || data?.message || "Could not save feedback");
+        return;
+      }
+      setFeedback((current) => [data.feedback, ...current]);
+      setFeedbackAuthor("");
+      setFeedbackProgress("");
+      setFeedbackDifficulties("");
+      setFeedbackComment("");
+    } finally {
+      setSavingFeedback(false);
     }
   }
 
@@ -326,8 +388,17 @@ export default function TeacherStudentDetail() {
                   </div>
                   {e.session_date && (
                     <div className="mt-1 rounded-lg border border-[#ffd8ad] bg-[#fff9f0] px-3 py-2 text-sm text-base-content/70">
-                      Session: {new Date(e.session_date).toLocaleString()}
+                      <div className="font-semibold text-[#2b1708]">
+                        {e.session_title || "Session document"}
+                      </div>
+                      <div>{new Date(e.session_date).toLocaleString()}</div>
                       {e.session_objectives ? ` - ${e.session_objectives}` : ""}
+                      {e.session_summary && (
+                        <p className="mt-1 font-medium">{e.session_summary}</p>
+                      )}
+                      {e.session_homework && (
+                        <p className="mt-1">Homework: {e.session_homework}</p>
+                      )}
                     </div>
                   )}
                   {e.points != null && (
@@ -362,6 +433,77 @@ export default function TeacherStudentDetail() {
                       );
                     })}
                   </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="card-title">Parent feedback</h2>
+              <p className="text-sm text-base-content/60">
+                Log what parents share about satisfaction, progress, and difficulties at home.
+              </p>
+            </div>
+          </div>
+
+          <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={saveFeedback}>
+            <label className="form-control">
+              <span className="label-text">Date</span>
+              <input className="input input-bordered" type="date" value={feedbackDate} onChange={(e) => setFeedbackDate(e.target.value)} required />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Author</span>
+              <input className="input input-bordered" value={feedbackAuthor} onChange={(e) => setFeedbackAuthor(e.target.value)} placeholder="Parent name" />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Satisfaction</span>
+              <select className="select select-bordered" value={feedbackSatisfaction} onChange={(e) => setFeedbackSatisfaction(e.target.value)}>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </label>
+            <label className="form-control">
+              <span className="label-text">Perceived progress</span>
+              <textarea className="textarea textarea-bordered min-h-24" value={feedbackProgress} onChange={(e) => setFeedbackProgress(e.target.value)} />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Difficulties observed</span>
+              <textarea className="textarea textarea-bordered min-h-24" value={feedbackDifficulties} onChange={(e) => setFeedbackDifficulties(e.target.value)} />
+            </label>
+            <label className="form-control">
+              <span className="label-text">Comment</span>
+              <textarea className="textarea textarea-bordered min-h-24" value={feedbackComment} onChange={(e) => setFeedbackComment(e.target.value)} />
+            </label>
+            <button className="btn btn-primary md:col-span-2" disabled={savingFeedback}>
+              <ButtonContent loading={savingFeedback} loadingLabel="Saving...">
+                Add parent feedback
+              </ButtonContent>
+            </button>
+          </form>
+
+          {feedback.length === 0 ? (
+            <p className="mt-4 rounded-lg bg-base-200 p-3 text-sm text-base-content/60">
+              No parent feedback yet.
+            </p>
+          ) : (
+            <ul className="mt-4 divide-y divide-base-300">
+              {feedback.map((item) => (
+                <li key={item.id} className="py-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-semibold">
+                      {item.author || "Parent"} · {new Date(item.feedback_date).toLocaleDateString()}
+                    </div>
+                    {item.satisfaction && <span className="badge badge-outline">{item.satisfaction}</span>}
+                  </div>
+                  {item.progress && <p className="mt-2"><strong>Progress:</strong> {item.progress}</p>}
+                  {item.difficulties && <p className="mt-1"><strong>Difficulties:</strong> {item.difficulties}</p>}
+                  {item.comment && <p className="mt-1">{item.comment}</p>}
                 </li>
               ))}
             </ul>
@@ -415,8 +557,14 @@ export default function TeacherStudentDetail() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="font-medium">
+                        {session.title || new Date(session.session_date).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-base-content/60">
                         {new Date(session.session_date).toLocaleString()}
-                        {session.course_name ? ` - ${session.course_name}` : ""}
+                        {session.start_time || session.end_time
+                          ? ` • ${[session.start_time, session.end_time].filter(Boolean).join(" - ")}`
+                          : ""}
+                        {session.course_name ? ` • ${session.course_name}` : ""}
                       </div>
                       <div className="mt-1 text-sm text-base-content/70">
                         {session.objectives || "No objectives added yet."}
@@ -426,12 +574,14 @@ export default function TeacherStudentDetail() {
                   </div>
                   {session.evaluation_id ? (
                     <div className="mt-2 rounded-lg bg-success/10 p-3 text-sm text-success">
-                      Evaluation attached
-                      {session.evaluation_points != null && (
-                        <div className="mt-1">
+                      <div className="flex flex-wrap items-center gap-2 font-semibold">
+                        Evaluation attached
+                        {session.evaluation_points != null && (
                           <StarRating value={Number(session.evaluation_points)} readOnly />
-                        </div>
-                      )}
+                        )}
+                      </div>
+                      {session.summary && <p className="mt-2">{session.summary}</p>}
+                      {session.homework && <p className="mt-1">Homework: {session.homework}</p>}
                     </div>
                   ) : (
                     <Link

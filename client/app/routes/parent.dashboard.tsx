@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { API_URL, type AuthUser, fetchMe } from "../lib/auth";
 import { pdfUrl } from "../lib/reportLanguage";
 import { ButtonContent, PageLoader } from "../components/Spinner";
+import { StarRating } from "../components/StarRating";
 
 type Child = {
   id: number;
@@ -46,8 +47,14 @@ type Session = {
   id: number;
   student_id: number;
   session_date: string;
+  title: string | null;
+  start_time: string | null;
+  end_time: string | null;
   objectives: string | null;
   status: "planned" | "completed" | "cancelled";
+  score: string | null;
+  summary: string | null;
+  homework: string | null;
   first_name: string;
   last_name: string;
   course_name: string | null;
@@ -277,7 +284,11 @@ export default function ParentDashboard() {
                           {session.first_name} {session.last_name}
                         </div>
                         <div className="text-xs text-base-content/60">
+                          {session.title ? `${session.title} • ` : ""}
                           {new Date(session.session_date).toLocaleString()}
+                          {session.start_time || session.end_time
+                            ? ` • ${[session.start_time, session.end_time].filter(Boolean).join(" - ")}`
+                            : ""}
                           {session.course_name ? ` - ${session.course_name}` : ""}
                           {session.teacher_name ? ` - ${session.teacher_name}` : ""}
                         </div>
@@ -290,9 +301,18 @@ export default function ParentDashboard() {
                       <p className="mt-2 text-base-content/70">{session.objectives}</p>
                     )}
                     {session.evaluation_id && (
-                      <p className="mt-2 rounded-lg bg-success/10 p-2 text-success">
-                        Evaluation attached: {session.evaluation_points || "-"} stars
-                      </p>
+                      <div className="mt-2 rounded-lg bg-success/10 p-2 text-success">
+                        <div className="flex items-center gap-2 font-semibold">
+                          Evaluation attached
+                          {session.evaluation_points && (
+                            <StarRating value={Number(session.evaluation_points)} readOnly />
+                          )}
+                        </div>
+                        {session.summary && <p className="mt-1">{session.summary}</p>}
+                        {session.homework && (
+                          <p className="mt-1 text-success/80">Homework: {session.homework}</p>
+                        )}
+                      </div>
                     )}
                   </li>
                 ))}
