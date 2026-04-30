@@ -11,7 +11,16 @@ router.use(requireAuth, requireRole("teacher"))
 
 function reportLanguage(req) {
   const raw = req.body?.language || req.query?.lang
-  return String(raw || "").toLowerCase().startsWith("tr") ? "tr" : "en"
+  const normalized = String(raw || "").toLowerCase()
+  if (normalized.startsWith("tr")) return "tr"
+  if (normalized.startsWith("fr")) return "fr"
+  return "en"
+}
+
+function localeForReportLanguage(language) {
+  if (language === "tr") return "tr-TR"
+  if (language === "fr") return "fr-FR"
+  return "en-US"
 }
 
 const EVALUATION_CRITERIA = new Set([
@@ -103,11 +112,16 @@ function buildReportDraft(student, evaluations, reportMonth, language) {
     .map((evaluation) => evaluation.session_title || evaluation.course_name)
     .filter(Boolean)
   const isTurkish = language === "tr"
+  const isFrench = language === "fr"
   return {
     summary: isTurkish
       ? `${student.first_name} bu dönemde ${source.length} değerlendirme aldı. ${
           average ? `Ortalama puan ${average.toFixed(1)}/5.` : "Henüz puanlanmış değerlendirme yok."
         } ${sessionTitles.length ? `Çalışılan konular: ${sessionTitles.join(", ")}.` : ""}`
+      : isFrench
+        ? `${student.first_name} a reçu ${source.length} évaluation(s) sur cette période. ${
+            average ? `Note moyenne : ${average.toFixed(1)}/5.` : "Aucune évaluation notée pour le moment."
+          } ${sessionTitles.length ? `Thèmes travaillés : ${sessionTitles.join(", ")}.` : ""}`
       : `${student.first_name} received ${source.length} evaluation(s) in this period. ${
           average ? `Average rating: ${average.toFixed(1)}/5.` : "No rated evaluations yet."
         } ${sessionTitles.length ? `Topics covered: ${sessionTitles.join(", ")}.` : ""}`,
@@ -473,7 +487,7 @@ router.post(
 
       const title =
         req.body.title ||
-        `${language === "tr" ? "Aylık ders raporu" : "Monthly course report"} — ${student.first_name} ${student.last_name} — ${new Date().toLocaleString(language === "tr" ? "tr-TR" : "en-US", {
+        `${language === "tr" ? "Aylık ders raporu" : language === "fr" ? "Rapport mensuel de cours" : "Monthly course report"} — ${student.first_name} ${student.last_name} — ${new Date().toLocaleString(localeForReportLanguage(language), {
           month: "long",
           year: "numeric",
         })}`

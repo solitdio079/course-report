@@ -4,6 +4,7 @@ import { SUPPORTED_LANGUAGES } from "../i18n";
 const LABELS: Record<string, string> = {
   en: "EN",
   tr: "TR",
+  fr: "FR",
 };
 
 export function LanguageSwitcher({ className = "" }: { className?: string }) {

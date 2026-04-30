@@ -227,10 +227,69 @@ const PDF_LABELS = {
       priority: "Öncelikli güçlendirilmeli",
     },
   },
+  fr: {
+    author: "Auteur",
+    generated: "Généré",
+    student: "Élève",
+    monthlyCourseReport: "Rapport mensuel de cours",
+    socialReport: "Rapport social",
+    report: "Rapport",
+    teacherNotes: "Notes du professeur et contexte",
+    monthlyOverview: "Aperçu mensuel",
+    monthlyOverviewSub: "Un résumé clair du mois de l'élève",
+    ratingChart: "Graphique des notes",
+    ratingChartSub: "Note de progression de chaque évaluation",
+    evaluationTimeline: "Historique des évaluations",
+    evaluationTimelineSub: "Observations datées du professeur",
+    averageRating: (rating, count) =>
+      `Note moyenne : ${rating}/5 sur ${count} évaluation(s).`,
+    noRatings: "Aucune note enregistrée.",
+    commentOverview: "Résumé des commentaires",
+    noTeacherComments: "Aucun commentaire professeur enregistré.",
+    noNumericPoints: "Aucune note numérique à afficher.",
+    noEvaluations: "Aucune évaluation.",
+    noCourseComment: "Aucun commentaire de cours enregistré.",
+    teacherComment: "Commentaire du professeur",
+    progressNote: "Note de progression",
+    reportSummary: "Résumé mensuel du professeur",
+    strengths: "Points forts",
+    improvements: "Axes d'amélioration",
+    recommendations: "Recommandations",
+    session: "Séance",
+    objectives: "Objectifs",
+    sessionSummary: "Résumé de séance",
+    difficulties: "Difficultés",
+    mistakes: "Erreurs observées",
+    homework: "Devoirs",
+    recording: "Enregistrement",
+    sessionSkills: "Compétences travaillées",
+    moodCheck: "MoodCheck",
+    criteriaLabel: "Critères d'évaluation",
+    by: "par",
+    criteria: {
+      vocabulary: "Vocabulaire",
+      grammar: "Grammaire",
+      listening_comprehension: "Compréhension orale",
+      reading_comprehension: "Compréhension écrite",
+      speaking: "Expression orale",
+      writing: "Expression écrite",
+      pronunciation: "Prononciation",
+      confidence: "Confiance",
+      autonomy: "Autonomie",
+    },
+    statuses: {
+      in_progress: "En progrès",
+      needs_work: "À travailler",
+      priority: "Priorité à renforcer",
+    },
+  },
 }
 
 function normalizeLanguage(language) {
-  return String(language || "").toLowerCase().startsWith("tr") ? "tr" : "en"
+  const normalized = String(language || "").toLowerCase()
+  if (normalized.startsWith("tr")) return "tr"
+  if (normalized.startsWith("fr")) return "fr"
+  return "en"
 }
 
 function useUnicodeFont(doc) {
@@ -710,7 +769,9 @@ function drawPointsChart(doc, evaluations, labels, language) {
 }
 
 function localeForLanguage(language) {
-  return language === "tr" ? "tr-TR" : "en-US"
+  if (language === "tr") return "tr-TR"
+  if (language === "fr") return "fr-FR"
+  return "en-US"
 }
 
 function formatDateTime(value, language) {
