@@ -249,7 +249,9 @@ const TEXT = new Map<string, string>(
 );
 
 const originalText = new WeakMap<Text, string>();
+const translatedText = new WeakMap<Text, string>();
 const originalAttr = new WeakMap<Element, Map<string, string>>();
+const translatedAttr = new WeakMap<Element, Map<string, string>>();
 
 const ATTRIBUTES = ["placeholder", "aria-label", "title", "alt"];
 const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "CODE", "PRE", "TEXTAREA"]);
@@ -267,14 +269,22 @@ function restoreOrTranslateText(node: Text, language: string) {
   const parent = node.parentElement;
   if (!parent || SKIP_TAGS.has(parent.tagName)) return;
 
-  const original = originalText.get(node) || node.nodeValue || "";
-  if (!originalText.has(node)) originalText.set(node, original);
-
   if (language.toLowerCase().startsWith("fr")) {
+    const original = originalText.get(node) || node.nodeValue || "";
+    if (!originalText.has(node)) originalText.set(node, original);
     const translated = translateValue(original, language);
-    if (node.nodeValue !== translated) node.nodeValue = translated;
-  } else {
-    if (node.nodeValue !== original) node.nodeValue = original;
+    if (translated !== original) {
+      translatedText.set(node, translated);
+      if (node.nodeValue !== translated) node.nodeValue = translated;
+    }
+    return;
+  }
+
+  const translated = translatedText.get(node);
+  const original = originalText.get(node);
+  if (translated && original && node.nodeValue === translated) {
+    node.nodeValue = original;
+    translatedText.delete(node);
   }
 }
 
@@ -288,10 +298,26 @@ function restoreOrTranslateAttributes(element: Element, language: string) {
     }
     if (!originals.has(attr)) originals.set(attr, element.getAttribute(attr) || "");
     const original = originals.get(attr) || "";
-    const next = language.toLowerCase().startsWith("fr")
-      ? translateValue(original, language)
-      : original;
-    if (element.getAttribute(attr) !== next) element.setAttribute(attr, next);
+    if (language.toLowerCase().startsWith("fr")) {
+      const next = translateValue(original, language);
+      if (next !== original) {
+        let translations = translatedAttr.get(element);
+        if (!translations) {
+          translations = new Map();
+          translatedAttr.set(element, translations);
+        }
+        translations.set(attr, next);
+        if (element.getAttribute(attr) !== next) element.setAttribute(attr, next);
+      }
+      return;
+    }
+
+    const translations = translatedAttr.get(element);
+    const translated = translations?.get(attr);
+    if (translated && element.getAttribute(attr) === translated) {
+      element.setAttribute(attr, original);
+      translations?.delete(attr);
+    }
   });
 }
 
